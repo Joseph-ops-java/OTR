@@ -162,7 +162,7 @@ async function importFiles(files){
     if(assets&&!assets.local){if(f.size<=MAXMB*1048576){try{assetId=(await assets.upload(f)).id}catch(e){if(!localId){state.note="Import of "+f.name+" failed ("+((e&&e.code)||"error")+").";renderNote()}}}else big=true}
     E.uploads=E.uploads.filter(u=>u.id!==mid);
     if(!localId&&!assetId){const m=Object.assign({id:mid,url:tmp,local:true},base);state.media.push(m);queueThumbs(m);E.mediaSel=mid;renderMediaBrowser();continue}
-    URL.revokeObjectURL(tmp);const doc=Object.assign({},base,localId?{localId}:{},assetId?{assetId}:{},big?{deviceOnly:true}:{});
+    setTimeout(()=>URL.revokeObjectURL(tmp),8000);const doc=Object.assign({},base,localId?{localId}:{},assetId?{assetId}:{},big?{deviceOnly:true}:{});
     state.media.push(Object.assign({id:mid},doc));queueThumbs(state.media[state.media.length-1]);
     if(db){try{await db.collection("media").doc(mid).set(doc)}catch(e){saveErr(e)}}addLog(p.id,{text:"Imported "+f.name});
     if(big)toast("KEPT ON THIS DEVICE",`${f.name} (${fmtBytes(f.size)}) is stored in this browser at full quality. Select it and choose “Make cloud proxy” so Claude and your other devices can use it too.`);
@@ -242,7 +242,7 @@ function compose(ctx,t){const tl=E.tl;let li=0;
     if(tr==="V1"){const l=v1();const tc=l.find(c=>{const h=trHalf(c);return h>0&&t>=c.start-h&&t<c.start+h});
       if(tc){const A=v1Prev(tc),h=trHalf(tc),p=clamp((t-(tc.start-h))/(2*h),0,1);const[la,xa]=layer(li++),[lb,xb]=layer(li++);if(!A.off)renderClip(xa,A,t);if(!tc.off)renderClip(xb,tc,t);transition(ctx,tc.tr.type,la,lb,p);return}
       const c=l.find(c=>t>=c.start&&t<cend(c));if(c&&!c.off){const[lc,xc]=layer(li++);renderClip(xc,c,t);ctx.drawImage(lc,0,0)}return}
-    tl.clips.filter(c=>c.track===tr&&!c.off&&t>=c.start&&t<cend(c)).sort((a,b)=>a.start-b.start).forEach(c=>{const[lc,xc]=layer(li++%6);renderClip(xc,c,t);ctx.drawImage(lc,0,0)})})}
+    tl.clips.filter(c=>c.track===tr&&!c.off&&t>=c.start&&t<cend(c)).sort((a,b)=>a.start-b.start).forEach(c=>{const[lc,xc]=layer(li++%6);renderClip(xc,c,t);const op=ctx.globalCompositeOperation;if(c.blend&&!E.noGrade)ctx.globalCompositeOperation=c.blend;ctx.drawImage(lc,0,0);ctx.globalCompositeOperation=op})})}
 const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
 function transition(ctx,type,A,B,p){const W=E.tl.w,H=E.tl.h,e=ease(p);ctx.save();
   if(type==="black"||type==="white"){ctx.fillStyle=type==="black"?"#000":"#fff";ctx.fillRect(0,0,W,H);ctx.globalAlpha=p<.5?1-p*2:p*2-1;ctx.drawImage(p<.5?A:B,0,0)}

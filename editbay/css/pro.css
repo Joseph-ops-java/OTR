@@ -358,3 +358,20 @@ details.isec[open]{padding-bottom:6px}
 .krow{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--line2);font-size:12.5px}
 .kb{min-width:34px;cursor:pointer;background:var(--well)}.kb.cap{border-color:var(--sel);color:var(--sel)}
 @media (max-width:600px){.krows{grid-template-columns:1fr}}
+/* effects browser */
+.fxb{flex:1;min-height:0;overflow:auto;padding:8px 10px 14px}
+.fxh{font-size:11.5px;font-weight:600;color:var(--muted);margin:10px 0 6px;display:flex;justify-content:space-between;gap:8px}.fxh small{font-weight:400;color:var(--dim)}
+.fxg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+.fxt{background:#212124;border:1px solid var(--line);border-radius:8px;padding:5px 5px 6px;display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text);text-align:left}
+.fxt:hover{border-color:#6a6a72;background:#28282c}
+.fxp{display:block;aspect-ratio:16/9;border-radius:5px;background:linear-gradient(90deg,#3f62a8 50%,#c86b4f 50%);overflow:hidden;position:relative}
+.fxt:hover .fxp::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,#fff6,transparent);animation:fxs 1s linear infinite}@keyframes fxs{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.tr-iris .fxp{background:radial-gradient(circle,#c86b4f 35%,#3f62a8 36%)}.tr-clock .fxp{background:conic-gradient(#c86b4f 0 40%,#3f62a8 40%)}.tr-black .fxp{background:linear-gradient(90deg,#3f62a8,#000 50%,#c86b4f)}.tr-white .fxp{background:linear-gradient(90deg,#3f62a8,#fff 50%,#c86b4f)}
+.tr-dissolve .fxp,.tr-blurx .fxp{background:linear-gradient(90deg,#3f62a8,#c86b4f)}.tr-blinds .fxp{background:repeating-linear-gradient(#3f62a8 0 5px,#c86b4f 5px 9px)}.tr-doors .fxp{background:linear-gradient(90deg,#3f62a8 25%,#c86b4f 25% 75%,#3f62a8 75%)}
+.tr-pushup .fxp,.tr-pushdown .fxp{background:linear-gradient(#3f62a8 50%,#c86b4f 50%)}.tr-burn .fxp{background:radial-gradient(circle at 40% 40%,#fff3c4,#ff8a28 35%,#3f62a8 75%)}.tr-glitch .fxp{background:repeating-linear-gradient(#3f62a8 0 4px,#c86b4f 4px 6px,#0ff 6px 7px)}
+.tr-spin .fxp,.tr-zoom .fxp,.tr-zoomout .fxp{background:radial-gradient(circle,#c86b4f 25%,#3f62a8 60%)}.tr-flash .fxp{background:linear-gradient(90deg,#3f62a8,#fff,#c86b4f)}
+.ef-blur .fxp{filter:blur(2px)}.ef-glow .fxp{box-shadow:inset 0 0 14px #fff8}.ef-rgb .fxp{background:linear-gradient(90deg,#f0f,#0ff)}.ef-pixel .fxp{background:conic-gradient(#3f62a8 25%,#c86b4f 0 50%,#3f62a8 0 75%,#c86b4f 0) 0 0/12px 12px}
+.ef-vhs .fxp{background:repeating-linear-gradient(#3f62a8 0 2px,#2a2a33 2px 4px)}.ef-leak .fxp{background:radial-gradient(circle at 70% 30%,#ffd28a,#ff6a28 40%,#3f62a8 80%)}.ef-invert .fxp{background:linear-gradient(90deg,#c0d,#3f9)}.ef-mirror .fxp{background:linear-gradient(90deg,#3f62a8,#c86b4f 50%,#3f62a8)}
+.ef-shake .fxp,.ef-pulse .fxp{background:radial-gradient(circle,#c86b4f 30%,#3f62a8 32%)}
+.fxrow .x{background:none;border:0;color:var(--dim);font-size:12px}.fxrow .x:hover{color:#ff7a70}
+body.picking #pgm{cursor:crosshair}

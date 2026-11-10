@@ -79,6 +79,7 @@ The AI features call `sample.json(prompt, {images})` and expect a JSON reply (se
 | `js/gl.js` | WebGL grading: wheels, curves, LUTs |
 | `js/director.js` | Create from a prompt |
 | `js/polish.js` | Reverse playback, typed nudges, resizable panels |
+| `js/fx.js` | Transitions (20), stackable effects, crop/border/shadow, blend modes, GPU chroma key, Effects browser |
 | `js/ux.js` | Navigation, title-bar actions, collapsible Inspector, empty states, media search, export presets |
 | `js/ux2.js` | Timeline windowing on scroll, undo history, automatic backups, rebindable shortcuts |
 | `js/chat.js`, `js/beta.js` | Claude conversation and Scenes; private storage, feedback, crash reports, tour |

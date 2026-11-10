@@ -167,7 +167,9 @@ Reply with ONLY JSON: {"say":"one or two plain sentences on what you changed and
 {"op":"move","id":ID,"track":"V2","start":s} or for V1 reordering {"op":"move","id":ID,"index":n}
 {"op":"add_media","media":MEDIA_ID,"track":"V1|V2|V3|A1|A2|A3","at":s,"in":s,"out":s,"as":"name"}
 {"op":"add_title","text":"...","at":s,"dur":s,"track":"V2","style":"basic|lower|bold|caption|cinema|neon|mono","set":{...},"as":"name"}
-{"op":"transition","id":ID,"type":"dissolve|black|white|push|slide|wipe|zoom|whip|flash|none","d":0.5} — on a V1 clip, blends from the clip before it.
+{"op":"transition","id":ID,"type":"dissolve|black|white|push|slide|wipe|zoom|whip|flash|iris|clock|blurx|spin|glitch|burn|pushup|pushdown|doors|blinds|zoomout|none","d":0.5}
+{"op":"effect","id":ID,"type":"blur|glow|rgb|pixel|vhs|shake|pulse|leak|mirror|invert|key","amount":0..1,"color":"#00ff00 (key only)"} — amount 0 removes it.
+{"op":"frame","id":ID,"set":{"cropL":0..0.48,"cropR","cropT","cropB","bdr":corner 0..1,"bdw":border 0..0.03,"shd":shadow 0..1,"bdc":"#fff","flipH":bool,"flipV":bool,"blend":"screen|multiply|overlay|lighter|soft-light"}} — picture-in-picture framing. — on a V1 clip, blends from the clip before it.
 {"op":"look","id":ID,"look":"teal|noir|film|night|bleach|matte|vivid|red|none"}
 {"op":"kf","id":ID,"prop":"scale|x|y|rot|op|vol","t":secondsFromClipStart,"v":value}
 {"op":"marker","t":s,"text":"note"}
