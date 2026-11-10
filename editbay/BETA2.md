@@ -5,9 +5,10 @@ Beta 1 was tested on claude.ai by people who had the link. For Beta 2, anyone wi
 ## Done
 - [x] **Hosted build:** runs on any static host (GitHub Pages) without a Claude account. Projects and media stay in the tester's browser.
 - [x] **Installable web app:** manifest, offline service worker, app icons and an **Install app** button. Video, audio, image and `.editbay` files can be opened with Edit Bay from the desktop (Chrome and Edge).
-- [x] **Claude on the hosted site:** each tester connects their own Claude API key (Help › Connect Claude, the Claude tab, or the title-bar status).
-  - The key is checked when it's saved, kept only in that browser, and sent only to Anthropic through the official SDK.
-  - The other option is to run the proxy in `server/` so testers don't need a key.
+- [x] **Free AI on the hosted site:** Help › AI Settings chooses what powers Create, the AI chat, Review and Smart Auto Cut.
+  - **Free options:** Google Gemini with a free AI Studio key (recommended), any OpenAI-compatible service (OpenRouter's `:free` models, Groq, or Ollama and LM Studio on your own computer), or an open model running in the browser.
+  - **Claude:** with your own key, or through the proxy in `server/`.
+  - **Keys:** each one is checked when saved, stored only in the browser, and sent only to its own service.
 - [x] **Feedback from hosted testers:** a prefilled GitHub issue labelled `beta-feedback`, including usage counts when the tester opted in.
 - [x] **Version label:** "Beta 2" everywhere: About, feedback, crash reports and issues.
 - [x] **Sample project:** **Try with sample media** opens an 11-second Dark Out teaser built from the real flyer, the DJ Samszy photo, the OTR logo and the real event facts.

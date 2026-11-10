@@ -19,7 +19,7 @@ const _rm4=renderModal;renderModal=function(){if(state.modal==="create"){drModal
 function openCreate(){if(!cur()){state.modal="new";render();toast("CREATE","Make a project and import your clips, then choose Create.");return}pause();E.x=null;state.modal="create";$("#modal").dataset.k="";render()}
 
 async function runCreate(o){if(DR.busy)return;DR.busy=true;try{
-  const S=await getSample();if(!S){setDrProg("");toast("CREATE",HOSTED?"Create needs Claude. Connect it in Help › Connect Claude with your own Claude API key. Auto Cut’s Quick mode works without it.":"Create needs Claude: open Edit Bay on claude.ai while signed in. Auto Cut’s Quick mode works without it.");return}
+  const S=await getSample();if(!S){setDrProg("");toast("CREATE",HOSTED?"Create needs an AI. Pick a free one in Help › AI Settings. Auto Cut’s Quick mode works without it.":"Create needs Claude: open Edit Bay on claude.ai while signed in. Auto Cut’s Quick mode works without it.");return}
   const media=o.ids.map(mediaOf).filter(Boolean);const pool=[];for(let i=0;i<media.length;i++){setDrProg(`Watching ${media[i].name} (${i+1}/${media.length})…`);try{pool.push({m:media[i],an:await analyzeVideo(media[i])})}catch(e){}}
   if(!pool.length){toast("CREATE","Couldn’t read any of those clips.");return}
   let beats=null,music=o.music?mediaOf(o.music):null;if(music){setDrProg("Finding the beat…");try{beats=beatTimes(await decodeAudio(music))}catch(e){}}

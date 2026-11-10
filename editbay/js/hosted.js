@@ -30,7 +30,7 @@ const KEY_SAMPLE={limits:async()=>({images:{maxCount:8}}),
       if(A&&e instanceof A.RateLimitError)throw new Error("Claude is busy or your key hit its rate limit. Try again in a minute.");
       if(A&&e instanceof A.APIConnectionError)throw new Error("Couldn’t reach Claude. Check your connection.");
       if(A&&e instanceof A.APIError)throw new Error("Claude API error "+(e.status||"")+". Try again.");throw e}}};
-if(HOSTED){window.claude={use:async n=>n==="sample"?(CFG.claudeProxy?PROXY_SAMPLE:myKey()?KEY_SAMPLE:null):n==="downloads"?LDOWN:null}}
+if(HOSTED){window.claude={use:async n=>n==="sample"?(typeof aiSample==="function"?aiSample():CFG.claudeProxy?PROXY_SAMPLE:myKey()?KEY_SAMPLE:null):n==="downloads"?LDOWN:null}}
 
 function connectClaude(){if(typeof sheet!=="function")return;const has=!!myKey();
   sheet("sh-claude",`<h3>Connect Claude</h3>
@@ -61,7 +61,7 @@ document.addEventListener("submit",e=>{if(!HOSTED||!CFG.feedbackUrl||!e.target||
 /* first visit to a hosted copy: say what this build is */
 window.addEventListener("load",()=>{if(!HOSTED)return;let seen=false;try{seen=sessionStorage.getItem("editbay.hostednote")==="1";sessionStorage.setItem("editbay.hostednote","1")}catch(x){}
   /* wait until the first-run tour is closed so the two don't stack */
-  if(!seen)setTimeout(function note(){if(document.querySelector(".tour,#tour")){setTimeout(note,2000);return}if(typeof toast==="function")toast("TEST BUILD",CFG.claudeProxy?"Your projects and media stay in this browser. Claude features send a description of your timeline and small preview frames to the Claude API.":"Your projects and media stay in this browser. To edit with Claude, connect your Claude API key in Help › Connect Claude.")},2500)});
+  if(!seen)setTimeout(function note(){if(document.querySelector(".tour,#tour")){setTimeout(note,2000);return}if(typeof toast==="function")toast("TEST BUILD",CFG.claudeProxy?"Your projects and media stay in this browser. Claude features send a description of your timeline and small preview frames to the Claude API.":"Your projects and media stay in this browser. To edit with AI, pick a free AI in Help › AI Settings (Google Gemini’s free key is the easiest).")},2500)});
 
 /* installable web app: offline shell, Install button, open files from the desktop */
 if(HOSTED&&"serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"||location.hostname==="127.0.0.1")){
