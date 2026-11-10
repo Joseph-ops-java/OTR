@@ -13,7 +13,7 @@ function renderSource(){const p=cur(),s=E.src,m=s&&mediaOf(s.mediaId);
   if(!$("#srcv")||$("#srcv").dataset.m!==m.id){
     $("#vArea").innerHTML=m.kind==="image"?`<div class="srcbox"><img id="srcv" data-m="${esc(m.id)}" src="${esc(blobUrl(m))}" alt=""></div>`:`<div class="srcbox ${vis?"":"aud"}"><${m.kind==="audio"?"audio":"video"} id="srcv" data-m="${esc(m.id)}" src="${esc(playUrl(m))}" playsinline preload="auto"></${m.kind==="audio"?"audio":"video"}>${vis?"":`<div class="srcwave" style="background-image:url('${(TH[m.id]||{}).wave||""}')"></div>`}</div>`;
     const v=$("#srcv");if(v.tagName!=="IMG"){v.addEventListener("loadedmetadata",()=>{v.currentTime=s.t||0});v.addEventListener("timeupdate",updSrc);v.addEventListener("play",updSrc);v.addEventListener("pause",updSrc);v.addEventListener("click",()=>v.paused?v.play().catch(()=>{}):v.pause())}}
-  const dv=m.kind==="audio"?"a":"v",opts=dv==="a"?["A1","A2","A3"]:["V1","V2","V3"];
+  const dv=m.kind==="audio"?"a":"v",opts=dv==="a"?TRACKS.filter(t=>t[0]==="A"):VTRACKS.slice();
   $("#transport").innerHTML=`${modeSeg()}<button class="tbtn play" id="sPlay" aria-label="Play">${ic("play")}</button><span class="tc-s" id="sNow">${tcs(s.t||0)}</span>
     <div class="grow srcbar" id="srcbar"><div class="rg" id="srcrg"></div><input type="range" id="sScrub" min="0" max="1000" value="0" aria-label="Scrub source"></div><span class="tc-s" style="color:var(--muted)">${tcs(dur)}</span>
     <button class="ib" data-smk="i" title="Mark In (I)">In</button><button class="ib" data-smk="o" title="Mark Out (O)">Out</button>

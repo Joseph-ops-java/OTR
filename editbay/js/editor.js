@@ -242,7 +242,7 @@ function compose(ctx,t){const tl=E.tl;let li=0;
     if(tr==="V1"){const l=v1();const tc=l.find(c=>{const h=trHalf(c);return h>0&&t>=c.start-h&&t<c.start+h});
       if(tc){const A=v1Prev(tc),h=trHalf(tc),p=clamp((t-(tc.start-h))/(2*h),0,1);const[la,xa]=layer(li++),[lb,xb]=layer(li++);if(!A.off)renderClip(xa,A,t);if(!tc.off)renderClip(xb,tc,t);transition(ctx,tc.tr.type,la,lb,p);return}
       const c=l.find(c=>t>=c.start&&t<cend(c));if(c&&!c.off){const[lc,xc]=layer(li++);renderClip(xc,c,t);ctx.drawImage(lc,0,0)}return}
-    tl.clips.filter(c=>c.track===tr&&!c.off&&t>=c.start&&t<cend(c)).sort((a,b)=>a.start-b.start).forEach(c=>{const[lc,xc]=layer(li++%6);renderClip(xc,c,t);const op=ctx.globalCompositeOperation;if(c.blend&&!E.noGrade)ctx.globalCompositeOperation=c.blend;ctx.drawImage(lc,0,0);ctx.globalCompositeOperation=op})})}
+    tl.clips.filter(c=>c.track===tr&&!c.off&&t>=c.start&&t<cend(c)).sort((a,b)=>a.start-b.start).forEach(c=>{const[lc,xc]=layer(li++%6);renderClip(xc,c,t);const op=ctx.globalCompositeOperation;if(c.blend&&!E.noGrade)ctx.globalCompositeOperation=c.blend;if(typeof overlayDraw==="function")overlayDraw(ctx,lc,c,t);else ctx.drawImage(lc,0,0);ctx.globalCompositeOperation=op})})}
 const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
 function transition(ctx,type,A,B,p){const W=E.tl.w,H=E.tl.h,e=ease(p);ctx.save();
   if(type==="black"||type==="white"){ctx.fillStyle=type==="black"?"#000":"#fff";ctx.fillRect(0,0,W,H);ctx.globalAlpha=p<.5?1-p*2:p*2-1;ctx.drawImage(p<.5?A:B,0,0)}
@@ -505,7 +505,7 @@ function freezeAt(){if(!E.tl)return;const at=E.t;let c=selClips().find(x=>x.type
     else{f.start=at;tl.clips.push(f);if(n)n.start=at+2;resolveTrack(c.track,f.id)}
     E.sel=new Set([f.id])});state.itab="clip";render()}
 function detachAudio(){const c=selClips().find(x=>x.type==="video"&&!x.freeze);if(!c)return;
-  edit(tl=>{const tr=["A1","A2","A3"].find(t=>!tl.clips.some(x=>x.track===t&&x.start<cend(c)&&cend(x)>c.start))||"A3";
+  edit(tl=>{const ats=TRACKS.filter(t=>t[0]==="A");const tr=ats.find(t=>!tl.clips.some(x=>x.track===t&&x.start<cend(c)&&cend(x)>c.start))||ats[ats.length-1];
     const a={id:uid("c"),track:tr,type:"audio",mediaId:c.mediaId,name:(c.name||"Clip")+" · audio",start:c.start,in:c.in,out:c.out,speed:c.speed||1,vol:c.vol==null?1:c.vol,pan:0,fadeIn:0,fadeOut:0,by:E.by};
     tl.clips.push(a);relink(a);c.vol=0;E.sel=new Set([a.id])});toast("AUDIO DETACHED","The sound is now its own clip on the audio tracks.")}
 function toggleKf(k){const c=selClips()[0];if(!c)return;if(E.t<c.start-1e-6||E.t>cend(c)+1e-6){toast("KEYFRAME","Move the playhead inside the clip to add a keyframe.");return}

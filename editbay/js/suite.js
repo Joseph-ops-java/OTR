@@ -55,12 +55,12 @@ function exportEDL(){const tl=E.tl;if(!tl||!tl.clips.length){toast("EDL","The ti
   const ev=(trk,c)=>{const m=mediaOf(c.mediaId);n++;const reel=(m?m.name:"BL").replace(/\.[^.]+$/,"").replace(/[^A-Za-z0-9]/g,"").slice(0,8).toUpperCase()||"AX";const sp=c.speed||1;
     let line=`${String(n).padStart(3,"0")}  ${reel.padEnd(8)} ${trk.padEnd(5)} C        ${T(c.freeze?c.fz:c.in)} ${T(c.freeze?c.fz+cdur(c):c.in+cdur(c)*sp)} ${T(REC+c.start)} ${T(REC+cend(c))}\n`;
     if(sp!==1&&!c.freeze)line+=`M2   ${reel.padEnd(8)}       ${(fps*sp).toFixed(1).padStart(5)}                ${T(c.in)}\n`;line+=`* FROM CLIP NAME: ${m?m.name:c.name||"Clip"}\n`;if(c.tr&&c.tr.type)line+=`* TRANSITION IN: ${c.tr.type.toUpperCase()} ${(c.tr.d||.5).toFixed(2)} S\n`;return line+"\n"};
-  v1().filter(c=>c.mediaId&&!c.off).forEach(c=>out+=ev("V",c));["V2","V3"].forEach(t=>tl.clips.filter(c=>c.track===t&&c.mediaId&&!c.off).sort((a,b)=>a.start-b.start).forEach(c=>out+=ev("V",c).replace("\n","\n* TRACK: "+t+"\n")));
-  ["A1","A2","A3"].forEach((t,i)=>tl.clips.filter(c=>c.track===t&&!c.off).sort((a,b)=>a.start-b.start).forEach(c=>out+=ev(i?"A"+(i+1):"A",c)));
+  v1().filter(c=>c.mediaId&&!c.off).forEach(c=>out+=ev("V",c));VTRACKS.filter(t=>t!=="V1").forEach(t=>tl.clips.filter(c=>c.track===t&&c.mediaId&&!c.off).sort((a,b)=>a.start-b.start).forEach(c=>out+=ev("V",c).replace("\n","\n* TRACK: "+t+"\n")));
+  TRACKS.filter(t=>t[0]==="A").forEach((t,i)=>tl.clips.filter(c=>c.track===t&&!c.off).sort((a,b)=>a.start-b.start).forEach(c=>out+=ev(i?"A"+(i+1):"A",c)));
   saveFile(fname(cur().title)+".edl",new Blob([out],{type:"text/plain"}))}
 function saveProjectFile(){const p=clone(cur());const tl=clone(E.tl||state.timelines[p.id]||null);const used=new Set((tl?tl.clips:[]).map(c=>c.mediaId).filter(Boolean));
   const media=projMedia().map(m=>{const o=clone(m);delete o.localId;delete o.url;delete o.local;o.used=used.has(m.id);return o});
-  const data={app:"Edit Bay",format:1,version:APP_VERSION,savedAt:new Date().toISOString(),project:p,timeline:tl,media};
+  const data={app:"Edit Bay",format:1,version:APP_VERSION,savedAt:new Date().toISOString(),project:p,timeline:tl,media,luts:typeof packLuts==="function"?packLuts(tl):undefined};
   saveFile(fname(p.title)+".editbay",new Blob([JSON.stringify(data,null,1)],{type:"application/json"}))}
 $("#projIn").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;let d;try{d=JSON.parse(await f.text())}catch(x){toast("CAN’T OPEN","That file isn’t an Edit Bay project.");return}
   if(!d||d.app!=="Edit Bay"||!d.project){toast("CAN’T OPEN","That file isn’t an Edit Bay project.");return}

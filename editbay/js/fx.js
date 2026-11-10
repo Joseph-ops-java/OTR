@@ -109,7 +109,8 @@ function renderFxBrowser(){$("#bacts").innerHTML="";const sel=selClips();const v
     <div class="fxh">Looks</div><div class="fxg">${Object.entries(LOOKS).filter(([k])=>k!=="none").map(([k,L])=>`<button class="fxt" data-fxlook="${k}"><span class="fxp" style="background:${lookSwatch(L)}"></span>${esc(L[0])}</button>`).join("")}</div></div>`}
 document.addEventListener("click",e=>{const lk=e.target.closest("[data-fxlook]");if(lk){const k=lk.dataset.fxlook,L=LOOKS[k];const cs=selClips().filter(c=>c.type==="video"||c.type==="image");if(!cs.length){toast("LOOKS","Select a video or image clip first.");return}edit(()=>cs.forEach(c=>{Object.assign(c,clone(L[1]));c.look=k}));toast("LOOK",L[0]+" on "+cs.length+" clip"+(cs.length>1?"s":""));return}
   const b=e.target.closest("[data-applytr],[data-applyfx]");if(!b)return;
-  if(b.dataset.applyfx){addFx(b.dataset.applyfx);return}const k=b.dataset.applytr;const cs=selClips().filter(c=>c.track==="V1"&&v1Prev(c));
+  if(b.dataset.applyfx){addFx(b.dataset.applyfx);return}const k=b.dataset.applytr;const ov=selClips().filter(c=>c.track!=="V1"&&c.type!=="audio");
+  if(ov.length&&!selClips().some(c=>c.track==="V1")){edit(()=>ov.forEach(c=>{c.trIn={type:k==="black"||k==="white"?"dissolve":k,d:(c.trIn&&c.trIn.d)||.5}}));toast("ANIMATE IN",(TRANS.find(x=>x[0]===k)||[0,k])[1]+" on "+ov.length+" overlay"+(ov.length>1?"s":"")+". Set the way out in the Inspector.");return}const cs=selClips().filter(c=>c.track==="V1"&&v1Prev(c));
   const tgt=cs.length?cs:[v1().find(c=>c.start>E.t-1e-6&&v1Prev(c))||v1().filter(c=>v1Prev(c)).pop()].filter(Boolean);if(!tgt.length){toast("TRANSITIONS","Put two clips on the storyline first.");return}
   edit(()=>tgt.forEach(c=>{c.tr={type:k,d:(c.tr&&c.tr.d)||.6}}));toast("TRANSITION",(TRANS.find(x=>x[0]===k)||[0,k])[1]+" on "+tgt.length+" cut"+(tgt.length>1?"s":""))},true);
 const _selRender=edRefresh;edRefresh=function(){_selRender();if(state.btab==="fx"&&E.page==="edit")renderFxBrowser()};

@@ -19,12 +19,12 @@ Then open http://localhost:8080 in Chrome or Edge.
 
 ### Create and cut
 - **Create from a prompt:** Claude watches your footage (contact sheets), writes a script and scene plan, and builds a timeline with shots, transitions, a look, titles, captions, music and an end card. It uses only your media and the facts in your brief.
-- **Editing:** a magnetic timeline (V1–V3, A1–A3), with a Source viewer for marking In/Out and inserting, overwriting, appending or connecting onto a chosen track.
+- **Editing:** a magnetic timeline (V1–V3 and A1–A3, expandable to six video and six audio tracks), with a Source viewer for marking In/Out and inserting, overwriting, appending or connecting onto a chosen track.
 - **Tools:** match frame, slip, roll, blade, ripple delete, freeze frame, multicam synced by audio, J/K/L including reverse, and typed frame nudges.
 
 ### Picture
 - **Speed:** ramps (Montage, Hero, Bullet, Flash in/out, Jump cut) and reverse.
-- **Effects:** transitions, keyframes, and titles with animation presets.
+- **Effects:** 20 transitions (overlays and titles can animate in and out with any of them), keyframes for position, scale, opacity, colour, crop, border, shadow and effect strength, and titles with animation presets.
 - **Colour on the GPU (WebGL):** white balance in linear light, lift/gamma/gain wheels, RGB and per-channel curves, 3D `.cube` LUTs, looks, scopes and a before/after split.
 
 ### Sound
@@ -41,10 +41,11 @@ Then open http://localhost:8080 in Chrome or Edge.
 - **Frame-accurate export:** WebCodecs H.264, with our own Rec.709 conversion so colours match on every browser.
 - **Audio:** AAC, or Opus where the browser has no AAC encoder.
 - **Loudness:** normalised to −14, −16 or −23 LUFS, with a −1 dB look-ahead peak limiter.
-- **Interchange:** FCPXML (Final Cut Pro, DaVinci Resolve), EDL (CMX 3600), `.editbay` project files, versions, and still frames.
+- **Interchange:** FCPXML (Final Cut Pro, DaVinci Resolve), EDL (CMX 3600), `.editbay` project files (with any LUTs used), versions, and still frames.
 
 ### Media
 - **Device storage:** originals are kept in IndexedDB, so file size is limited only by disk space.
+- **Preview quality:** Auto, Full, ½ or ¼ resolution in the viewer. Exports always render at full quality.
 - **Playback proxies:** an optional constant-frame-rate playback proxy for heavy footage. Exports still use the original.
 - **Cloud proxies** for syncing.
 
@@ -80,6 +81,7 @@ The AI features call `sample.json(prompt, {images})` and expect a JSON reply (se
 | `js/director.js` | Create from a prompt |
 | `js/polish.js` | Reverse playback, typed nudges, resizable panels |
 | `js/fx.js` | Transitions (20), stackable effects, crop/border/shadow, blend modes, GPU chroma key, Effects browser |
+| `js/fixes.js` | Preview quality, keyframes for colour/crop/effects, overlay in/out transitions, extra tracks, complete Paste Attributes, LUTs in project files |
 | `js/ux.js` | Navigation, title-bar actions, collapsible Inspector, empty states, media search, export presets |
 | `js/ux2.js` | Timeline windowing on scroll, undo history, automatic backups, rebindable shortcuts |
 | `js/chat.js`, `js/beta.js` | Claude conversation and Scenes; private storage, feedback, crash reports, tour |

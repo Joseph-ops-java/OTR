@@ -375,3 +375,9 @@ details.isec[open]{padding-bottom:6px}
 .ef-shake .fxp,.ef-pulse .fxp{background:radial-gradient(circle,#c86b4f 30%,#3f62a8 32%)}
 .fxrow .x{background:none;border:0;color:var(--dim);font-size:12px}.fxrow .x:hover{color:#ff7a70}
 body.picking #pgm{cursor:crosshair}
+.etrack.V4,.etrack.V5,.etrack.V6,.etrack.A4,.etrack.A5,.etrack.A6{height:40px}
+.trkadd{display:flex;gap:2px;margin-left:8px}.trkadd .ib{font-size:11px;padding:2px 6px}
+.tlhead{gap:6px}.tlhead .legend{flex-wrap:nowrap;overflow:hidden}
+.ib.pq{font:600 10.5px/1 var(--mono);min-width:34px;justify-content:center;border:1px solid var(--line)}
+.fxrow{grid-template-columns:78px minmax(0,1fr) 40px 18px 18px}.kfb.fxk{background:none;border:0;padding:0;color:var(--dim);font-size:11px}
+.transport{gap:6px;min-width:0;overflow:hidden}.transport .grow{min-width:0}.transport .ib{flex:none}
