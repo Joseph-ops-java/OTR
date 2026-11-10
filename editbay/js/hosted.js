@@ -3,15 +3,53 @@
    and feedback that reaches you as a prefilled GitHub issue. */
 const CFG=window.EDITBAY_CONFIG||{};
 const HOSTED=!window.claude;
-if(HOSTED&&CFG.claudeProxy){
-  const b64blob=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(",")[1]);r.onerror=rej;r.readAsDataURL(b)});
-  const SAMPLE={
-    limits:async()=>({images:{maxCount:8}}),
-    json:async(prompt,o)=>{const images=[];for(const b of ((o&&o.images)||[]).slice(0,8)){if(b instanceof Blob)images.push({media_type:b.type||"image/jpeg",data:await b64blob(b)})}
-      const r=await fetch(CFG.claudeProxy,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({prompt,images})});
-      if(!r.ok)throw new Error("Claude proxy: HTTP "+r.status+(r.status===429?" (busy, try again shortly)":""));return r.json()}};
-  window.claude={use:async n=>n==="sample"?SAMPLE:n==="downloads"?LDOWN:null};
-}
+/* Claude on a hosted copy, two ways:
+   1. claudeProxy in config.js: your server holds the key (server/).
+   2. Otherwise each tester connects their own Claude API key. It is kept only in this browser and sent only to
+      api.anthropic.com, through the official Anthropic SDK; usage is billed to that tester's key. */
+const KEY_LS="editbay.claudeKey",SDK_URL="https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.3.0/+esm";
+const CLAUDE_MODEL=CFG.claudeModel||"claude-opus-5-5";
+function myKey(){try{return localStorage.getItem(KEY_LS)||""}catch(e){return""}}
+const b64blob=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(",")[1]);r.onerror=rej;r.readAsDataURL(b)});
+async function imagesOf(o){const out=[];for(const b of ((o&&o.images)||[]).slice(0,8)){if(b instanceof Blob)out.push({media_type:/^image\/(jpeg|png|webp|gif)$/.test(b.type)?b.type:"image/jpeg",data:await b64blob(b)})}return out}
+function parseJsonReply(text){const a=text.indexOf("{"),z=text.lastIndexOf("}");if(a<0||z<=a)throw new Error("Claude didn’t return an edit. Try again.");return JSON.parse(text.slice(a,z+1))}
+const PROXY_SAMPLE={limits:async()=>({images:{maxCount:8}}),
+  json:async(prompt,o)=>{const images=await imagesOf(o);const r=await fetch(CFG.claudeProxy,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({prompt,images})});
+    if(!r.ok)throw new Error("Claude proxy: HTTP "+r.status+(r.status===429?" (busy, try again shortly)":""));return r.json()}};
+let sdkClient=null,sdkKey="";
+async function client(){const k=myKey();if(!k)throw new Error("Connect Claude first (Help › Connect Claude).");if(sdkClient&&sdkKey===k)return sdkClient;
+  const mod=await import(SDK_URL);const Anthropic=mod.default||mod.Anthropic;sdkClient=new Anthropic({apiKey:k,dangerouslyAllowBrowser:true});sdkKey=k;return sdkClient}
+const KEY_SAMPLE={limits:async()=>({images:{maxCount:8}}),
+  json:async(prompt,o)=>{const c=await client();const images=await imagesOf(o);const A=(await import(SDK_URL)).default;
+    try{const resp=await c.beta.messages.create({model:CLAUDE_MODEL,max_tokens:16000,output_config:{effort:CFG.claudeEffort||"medium"},betas:["server-side-fallback-2026-07-01"],fallbacks:"default",
+        system:"You are the assistant editor inside Edit Bay, a video editor. Reply with a single JSON object only, exactly in the shape the request asks for.",
+        messages:[{role:"user",content:[...images.map(i=>({type:"image",source:{type:"base64",media_type:i.media_type,data:i.data}})),{type:"text",text:prompt}]}]});
+      if(resp.stop_reason==="refusal")throw new Error("Claude declined this request.");return parseJsonReply(resp.content.filter(b=>b.type==="text").map(b=>b.text).join(""))}
+    catch(e){if(A&&e instanceof A.AuthenticationError)throw new Error("Claude rejected the API key. Check it in Help › Connect Claude.");
+      if(A&&e instanceof A.PermissionDeniedError)throw new Error("This API key isn’t allowed to use "+CLAUDE_MODEL+".");
+      if(A&&e instanceof A.RateLimitError)throw new Error("Claude is busy or your key hit its rate limit. Try again in a minute.");
+      if(A&&e instanceof A.APIConnectionError)throw new Error("Couldn’t reach Claude. Check your connection.");
+      if(A&&e instanceof A.APIError)throw new Error("Claude API error "+(e.status||"")+". Try again.");throw e}}};
+if(HOSTED){window.claude={use:async n=>n==="sample"?(CFG.claudeProxy?PROXY_SAMPLE:myKey()?KEY_SAMPLE:null):n==="downloads"?LDOWN:null}}
+
+function connectClaude(){if(typeof sheet!=="function")return;const has=!!myKey();
+  sheet("sh-claude",`<h3>Connect Claude</h3>
+  <p style="font-size:12.5px;line-height:1.55;color:var(--muted);margin:0 0 10px">Claude’s features (Create, the Claude chat, Review and Smart Auto Cut) need a Claude API key on this site. Get one at <a href="https://platform.claude.com/settings/keys" target="_blank" rel="noopener">platform.claude.com</a>. Requests are billed to that key.</p>
+  <label for="ckey" style="font-size:12px;font-weight:600">Claude API key</label>
+  <input id="ckey" type="password" autocomplete="off" spellcheck="false" placeholder="${has?"Saved. Paste a new key to replace it":"sk-ant-…"}" style="width:100%;margin:4px 0 8px">
+  <p style="font-size:11.5px;line-height:1.5;color:var(--dim);margin:0 0 6px">The key stays in this browser and goes only to Anthropic. Don’t connect a key on a shared computer. Claude receives a description of your timeline and a few small preview frames, never your media files. See <a href="privacy.html" target="_blank" rel="noopener">Privacy</a>.</p>
+  <p id="ckeyMsg" style="font-size:12px;min-height:16px;margin:0"></p>
+  <div class="acts">${has?`<button class="btn" data-ckey="remove">Disconnect</button>`:""}<button class="btn" data-shclose="1">Cancel</button><button class="btn purple" data-ckey="save">${has?"Save and test":"Connect"}</button></div>`,"Connect Claude")}
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-ckey],[data-connectclaude]");if(!b)return;e.preventDefault();
+  if(b.dataset.connectclaude!=null){connectClaude();return}
+  const msg=t=>{const m=document.getElementById("ckeyMsg");if(m)m.textContent=t};
+  if(b.dataset.ckey==="remove"){try{localStorage.removeItem(KEY_LS)}catch(x){}sdkClient=null;if(typeof closeSheet==="function")closeSheet("sh-claude");if(typeof toast==="function")toast("CLAUDE","Disconnected. The key was removed from this browser.");return}
+  const v=(document.getElementById("ckey").value||"").trim();if(!v){msg(myKey()?"Nothing to change.":"Paste your API key first.");return}
+  if(!/^sk-ant-/.test(v)){msg("That doesn’t look like a Claude API key (they start with sk-ant-).");return}
+  b.disabled=true;msg("Checking the key…");const old=myKey();try{localStorage.setItem(KEY_LS,v)}catch(x){msg("This browser won’t store the key (private mode?).");b.disabled=false;return}
+  try{const c=await client();await c.models.retrieve(CLAUDE_MODEL);if(typeof closeSheet==="function")closeSheet("sh-claude");if(typeof toast==="function")toast("CLAUDE CONNECTED","Claude is ready. Try the Claude tab in the Inspector, or Create.");if(typeof track==="function")track("claude-connected")}
+  catch(err){const A=await import(SDK_URL).then(m=>m.default).catch(()=>null);try{old?localStorage.setItem(KEY_LS,old):localStorage.removeItem(KEY_LS)}catch(x){}sdkClient=null;
+    msg(A&&err instanceof A.AuthenticationError?"Claude rejected that key. Check it and try again.":A&&err instanceof A.APIConnectionError?"Couldn’t reach Claude. Check your connection.":"Couldn’t check the key: "+(err&&err.message||"error"));b.disabled=false}});
 
 /* feedback from hosted testers: open a prefilled GitHub issue (must happen inside the click, or browsers block the tab) */
 document.addEventListener("submit",e=>{if(!HOSTED||!CFG.feedbackUrl||!e.target||e.target.id!=="fbForm")return;const t=document.getElementById("fbText");const text=t?t.value.trim():"";if(!text)return;
@@ -22,7 +60,8 @@ document.addEventListener("submit",e=>{if(!HOSTED||!CFG.feedbackUrl||!e.target||
 
 /* first visit to a hosted copy: say what this build is */
 window.addEventListener("load",()=>{if(!HOSTED)return;let seen=false;try{seen=sessionStorage.getItem("editbay.hostednote")==="1";sessionStorage.setItem("editbay.hostednote","1")}catch(x){}
-  if(!seen)setTimeout(()=>{if(typeof toast==="function")toast("TEST BUILD",CFG.claudeProxy?"Your projects and media stay in this browser. Claude features send a description of your timeline and small preview frames to the Claude API.":"Your projects and media stay in this browser. Claude features are off in this build; everything else works.")},2500)});
+  /* wait until the first-run tour is closed so the two don't stack */
+  if(!seen)setTimeout(function note(){if(document.querySelector(".tour,#tour")){setTimeout(note,2000);return}if(typeof toast==="function")toast("TEST BUILD",CFG.claudeProxy?"Your projects and media stay in this browser. Claude features send a description of your timeline and small preview frames to the Claude API.":"Your projects and media stay in this browser. To edit with Claude, connect your Claude API key in Help › Connect Claude.")},2500)});
 
 /* installable web app: offline shell, Install button, open files from the desktop */
 if(HOSTED&&"serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"||location.hostname==="127.0.0.1")){

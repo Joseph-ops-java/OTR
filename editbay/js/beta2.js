@@ -34,15 +34,15 @@ async function makeSample(){if(E.sampleBusy)return;E.sampleBusy=true;try{
   await new Promise(r=>setTimeout(r,250));if(!cur())throw new Error("no project");
   const files=[];for(const[u,n]of SAMPLE){const r=await fetch(u);if(!r.ok)throw new Error("missing "+u);const bl=await r.blob();files.push(new File([bl],n,{type:bl.type||(u.endsWith(".png")?"image/png":"image/jpeg")}))}
   await importFiles(files);const id=n=>(state.media.find(m=>m.name===n&&m.projectId===cur().id)||{}).id;const fl=id("Dark Out flyer.jpg"),dj=id("DJ Samszy.jpg"),lg=id("OTR logo.png");if(!fl||!dj||!lg)throw new Error("import");
-  placeMedia(fl,"V1",0);placeMedia(dj,"V1",100);placeMedia(lg,"V1",200);
-  edit(tl=>{const vs=tl.clips.filter(c=>c.track==="V1").sort((a,b)=>a.start-b.start);const D=[3.5,4,3.5];vs.forEach((c,i)=>{c.out=c.in+D[i];c.kb=i<2;if(i)c.tr={type:"dissolve",d:.6}});
-    if(vs[2]){vs[2].scale=.6}
-    let t=0;const T=(start,dur,text,preset,extra)=>{const c=newTitle(start);Object.assign(c,clone(TPRESETS[preset]||TPRESETS.basic),{text,out:dur,name:text.split("\n")[0]},extra||{});tl.clips.push(c)};
-    T(.4,2.8,"DARK OUT","cinema");T(.4,2.8,"OTR’s debut event","caption",{track:"V3"});
-    T(3.8,3.4,"DJ SAMSZY","bold");T(3.8,3.4,"RnB · Hip-Hop · Old School","caption",{track:"V3"});
-    T(7.7,3.2,"16 MAY 2026\nDoors 10:30PM · The Hidden Attic","basic",{yPos:80});T(7.7,3.2,"Presented by R.O.A.R & OTR","caption",{track:"V3"})});
+  /* story: the DJ poster hooks, the flyer gives the details, the OTR logo signs off. The posters carry their own
+     text, so titles only appear on the end card, where nothing else is written. */
+  placeMedia(dj,"V1",0);placeMedia(fl,"V1",100);placeMedia(lg,"V1",200);
+  edit(tl=>{const vs=tl.clips.filter(c=>c.track==="V1").sort((a,b)=>a.start-b.start);const D=[4,3.5,4];vs.forEach((c,i)=>{c.out=c.in+D[i];c.kb=i<2;if(i)c.tr={type:"dissolve",d:.6}});
+    if(vs[2])vs[2].scale=.6;const endAt=vs[2]?vs[2].start:7;
+    const T=(start,dur,text,preset,extra)=>{const c=newTitle(start);Object.assign(c,clone(TPRESETS[preset]||TPRESETS.basic),{text,out:dur,name:text.split("\n")[0]},extra||{});tl.clips.push(c)};
+    T(endAt+.5,3.4,"16 MAY 2026\nTHE HIDDEN ATTIC","basic",{yPos:70,size:4});T(endAt+.8,3.1,"Presented by\nR.O.A.R & OTR","caption",{track:"V3",yPos:85,size:3.2})});
   normalize();commit();seek(0);E.pps=null;render();
-  toast("SAMPLE PROJECT","A 11-second teaser built from real Dark Out material. Play it, change it, or ask Claude to recut it. Add your own music on A2.");track("sample")}
+  toast("SAMPLE PROJECT","An 11-second teaser built from the real Dark Out posters and OTR logo. Play it, change it, or ask Claude to recut it. Add your own music on A2.");track("sample")}
   catch(e){toast("SAMPLE PROJECT","Couldn’t load the sample media ("+(e.message||"error")+").")}finally{E.sampleBusy=false}}
 document.addEventListener("click",e=>{if(e.target.closest("[data-sample]"))makeSample()});
 const _rvS=renderViewer;renderViewer=function(){_rvS();const w=$("#vArea .welcome");if(!w||w.querySelector("[data-sample]"))return;const a=w.querySelector(".wacts");if(a)a.insertAdjacentHTML("beforeend",`<button class="btn" data-sample="1" title="Open a short teaser built from real Dark Out material">Try with sample media</button>`);
@@ -117,3 +117,14 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-usagetoggle]")
 (function(){const t=$(".tright");if(t&&!$("#drawerBtn"))t.insertAdjacentHTML("afterbegin",`<button class="tbtn2 drawerbtn" id="drawerBtn" aria-expanded="false" aria-controls="bbody" title="Show or hide the Media browser">Media</button>`)})();
 document.addEventListener("click",e=>{const b=e.target.closest("#drawerBtn");if(b){const on=!$(".app").classList.contains("drawer");$(".app").classList.toggle("drawer",on);b.setAttribute("aria-expanded",on);return}
   if($(".app").classList.contains("drawer")&&!e.target.closest(".browser-p")&&!e.target.closest(".ctx,.ov")&&matchMedia("(max-width:1100px) and (min-width:701px)").matches){$(".app").classList.remove("drawer");const d=$("#drawerBtn");if(d)d.setAttribute("aria-expanded","false")}});
+
+/* ---------- 10. hosted copies: Connect Claude (tester's own key) ---------- */
+if(HOSTED&&!CFG.claudeProxy){
+  const _gsH=getSample;getSample=async function(){const s=await _gsH();if(!s&&navigator.userActivation&&navigator.userActivation.isActive&&!$("#sh-claude"))connectClaude();return s};
+  (function(){const fm=$("#fileMenu");const ab=fm&&fm.querySelector('[data-fm="about"]');if(ab&&!fm.querySelector("[data-connectclaude]"))ab.insertAdjacentHTML("beforebegin",`<button role="menuitem" data-connectclaude="1">Connect Claude…</button>`)})();
+  const _clH=cmdList;cmdList=function(){const L=_clH();L.push({g:"Claude",l:myKey()?"Change or disconnect Claude API key":"Connect Claude (your API key)",f:connectClaude});return L};
+  setInterval(()=>{const t=$("#liveTxt");if(t&&!myKey()&&/idle/i.test(t.textContent))t.textContent="Claude not connected"},2000);
+  document.addEventListener("click",e=>{if(e.target.closest("#liveBtn")&&!myKey()){e.preventDefault();e.stopImmediatePropagation();connectClaude()}},true);
+  const _riH=renderInsp;renderInsp=function(){_riH();if(state.itab!=="claude"||myKey())return;const box=$("#insp");if(!box||box.querySelector(".ccard"))return;const head=box.querySelector(".assist,.chat")||box.firstElementChild;if(!head)return;
+    head.insertAdjacentHTML("beforebegin",`<div class="ccard"><b>Connect Claude to edit with it</b><p>On this site Claude runs on your own Claude API key. It’s stored only in this browser.</p><button class="btn purple sm" data-connectclaude="1">Connect Claude</button></div>`)};
+}
