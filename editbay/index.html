@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edit Bay</title>
+<meta name="description" content="Edit Bay: a browser video editor with Claude as your assistant editor.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Anton&family=Archivo:wght@500;700;800;900&family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;800&family=Space+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/editor.css">
+<link rel="stylesheet" href="css/pro.css">
+</head>
+<body>
+<div class="app">
+  <header class="tbar">
+    <div class="brand"><span class="mark" data-ic="film"></span><b>Edit Bay</b><div class="menus"><button class="mbtn" id="fileMenuBtn" aria-haspopup="true" aria-expanded="false">File</button><button class="mbtn" id="helpBtn" title="Shortcuts and help (?)">Help</button></div></div>
+    <div class="name" id="winName">Edit Bay</div>
+    <div class="tright"><span class="savechip" id="saveChip" title="Where your work is saved"></span><button class="live" id="liveBtn" title="Background Tasks (⌘9)"><span class="pulse" id="livePulse"></span><span id="liveTxt">Claude idle</span></button></div>
+  </header>
+  <div class="top">
+    <section class="pane browser-p" aria-label="Browser">
+      <div class="ph"><div class="btabs" id="btabs"><button data-btab="media" aria-pressed="true">Media</button><button data-btab="projects" aria-pressed="false">Projects</button></div><div style="display:flex;gap:6px" id="bacts"></div></div>
+      <div id="bbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>
+    </section>
+    <section class="pane viewer" aria-label="Viewer">
+      <div class="ph"><span id="vName">Viewer</span><span id="vMeta" class="mono"></span></div>
+      <div class="stage-area" id="vArea"></div>
+      <div class="transport" id="transport"></div>
+    </section>
+    <section class="pane" aria-label="Inspector">
+      <div class="ph"><b>Inspector</b><div class="itabs" id="itabs"></div></div>
+      <div class="ibody" id="insp"></div>
+    </section>
+  </div>
+  <div class="tools">
+    <div class="l">
+      <button class="ib" id="ixBtn" aria-pressed="true" title="Show or hide the Timeline Index" data-ic="index"><span class="sr">Index</span></button>
+      <span class="seg tool-seg"><button data-tool="select" aria-pressed="true" title="Select tool (A)" data-ic="select">Select</button><button data-tool="blade" aria-pressed="false" title="Blade tool (B)" data-ic="blade">Blade</button><button data-tool="slip" aria-pressed="false" title="Slip tool (Y): drag a clip to change which part of the source plays" data-ic="slip">Slip</button><button data-tool="roll" aria-pressed="false" title="Roll tool (R): drag near a cut to move it between two storyline clips" data-ic="roll">Roll</button></span>
+      <button class="ib" id="undoBtn" title="Undo (⌘Z)" data-ic="undo"><span class="sr">Undo</span></button><button class="ib" id="redoBtn" title="Redo (⇧⌘Z)" data-ic="redo"><span class="sr">Redo</span></button>
+      <button class="ib" id="snapBtn" title="Snapping (N)" data-ic="snap">Snap</button>
+      <button class="ib" id="titleBtn" title="Add a title at the playhead (T)" data-ic="title">Title</button>
+      <button class="ib" id="markBtn" title="Add a marker at the playhead (M)" data-ic="marker">Marker</button>
+    </div>
+    <div class="dash" id="dash"></div>
+    <div class="r"><button class="ib" id="bgBtn" aria-pressed="false" title="Background Tasks: what Claude is doing (⌘9)"><svg class="ring" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="#3a3a3e" stroke-width="3"/><circle id="ringArc" cx="10" cy="10" r="8" fill="none" stroke="#7a5cc6" stroke-width="3" stroke-dasharray="0 50.3" transform="rotate(-90 10 10)" stroke-linecap="round"/></svg><span id="bgLbl">Claude</span></button>
+      <div class="zoom"><input type="range" id="zoom" min="0" max="100" step="1" aria-label="Timeline zoom"><button class="btn" id="fitBtn" title="Zoom to fit (⇧Z)">Fit</button></div>
+      <button class="share" id="exportBtn" title="Export (⌘E)" data-ic="export">Export</button></div>
+  </div>
+  <div class="tlrow" id="tlrow">
+    <aside class="index" aria-label="Timeline Index">
+      <div class="ph"><b>Index</b><div class="ixtabs" id="ixtabs"></div></div>
+      <div id="ixbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>
+    </aside>
+    <section class="tlmain" aria-label="Timeline">
+      <div class="tlhead" id="tlhead"></div>
+      <div class="tlscroll" id="tlscroll"><div class="tlc" id="tlc"></div></div>
+    </section>
+  </div>
+  <nav class="pages" id="pagebar" aria-label="Pages"></nav>
+</div>
+<div class="menu" id="fileMenu" role="menu" hidden>
+  <button role="menuitem" data-fm="new">New Project…<kbd>⌥N</kbd></button>
+  <button role="menuitem" data-fm="import">Import Media…<kbd>⌘I</kbd></button>
+  <button role="menuitem" data-fm="captions">Import Captions (.srt, .vtt)…</button>
+  <button role="menuitem" data-fm="openproj">Open Project File…</button>
+  <hr>
+  <button role="menuitem" data-fm="version">Save Version…<kbd>⌘S</kbd></button>
+  <button role="menuitem" data-fm="versions">Versions</button>
+  <button role="menuitem" data-fm="dup">Duplicate Project</button>
+  <hr>
+  <button role="menuitem" data-fm="export">Export Video…<kbd>⌘E</kbd></button>
+  <button role="menuitem" data-fm="frame">Export Still Frame (PNG)<kbd>⌥⌘E</kbd></button>
+  <button role="menuitem" data-fm="edl">Export EDL (CMX 3600)</button>
+  <button role="menuitem" data-fm="saveproj">Save Project File (.editbay)</button>
+  <hr>
+  <button role="menuitem" data-fm="storage">Storage &amp; Media…</button>
+  <button role="menuitem" data-fm="about">About Edit Bay</button>
+</div>
+<div id="bgwin"></div>
+<div id="note"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="modal"></div>
+<input type="file" id="fileIn" accept="video/*,audio/*,image/*" multiple class="sr" tabindex="-1" aria-hidden="true">
+<input type="file" id="projIn" accept=".editbay,.json,application/json" class="sr" tabindex="-1" aria-hidden="true">
+<script src="js/icons.js"></script>
+<script src="js/store.js"></script>
+<script src="js/app.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/pro.js"></script>
+<script src="js/auto.js"></script>
+<script src="js/suite.js"></script>
+</body>
+</html>
