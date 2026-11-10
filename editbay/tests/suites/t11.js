@@ -1,0 +1,12 @@
+const { chromium } = require('playwright');const S=process.argv[2];const M=process.argv[3]||S;
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1500,height:950}});const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});await p.addInitScript(()=>{try{localStorage.setItem('editbay.toured','1')}catch(e){}});await p.goto('http://localhost:8765/index.html');await p.waitForTimeout(2000);
+ await p.click('[data-welnew]');await p.fill('#n-title','Aud');await p.click('#newForm button[type=submit]');await p.waitForTimeout(300);
+ await p.setInputFiles('#fileIn',[M+'/media/clipA.mp4',M+'/media/clipB.mp4']);await p.waitForTimeout(4000);
+ await p.evaluate(()=>{const f=n=>state.media.find(m=>m.name===n).id;placeMedia(f('clipA.mp4'),'V1',0);placeMedia(f('clipB.mp4'),'V1',100);edit(tl=>{v1()[1].lead=1;v1()[1].in=1;v1()[1].out=5;tl.tracks.V1=Object.assign(tl.tracks.V1||{},{eq:{l:3,m:0,h:-2},comp:true})})});
+ await p.evaluate(()=>{openExport();E.x.lufs='-16'});await p.evaluate(()=>runExport());console.log('export',await p.evaluate(()=>E.x.phase+' '+(E.x.err||'')+' '+JSON.stringify(E.x.loud&&{b:E.x.loud.before.I.toFixed(2),a:E.x.loud.after.I.toFixed(2),pk:E.x.loud.after.peak.toFixed(2)})));
+ const buf=await p.evaluate(async()=>{const a=new Uint8Array(await E.x.blob.arrayBuffer());let s='';for(let i=0;i<a.length;i+=32768)s+=String.fromCharCode.apply(null,a.subarray(i,i+32768));return btoa(s)});require('fs').writeFileSync(S+'/aud.mp4',Buffer.from(buf,'base64'));
+ // transition crossfade
+ await p.evaluate(()=>{edit(()=>{v1()[1].lead=0;v1()[1].tr={type:'dissolve',d:1}})});console.log('gates',await p.evaluate(()=>{const[a,b]=v1();return [5.5,6,6.4].map(t=>[audGate(a,t).toFixed(2),audGate(b,t).toFixed(2)].join('/')).join(' ')}));
+ await p.evaluate(()=>setPage('audio'));console.log('page',await p.evaluate(()=>E.page+' '+!!document.querySelector('[data-measure]')+' '+document.querySelector('#bbody').innerHTML.slice(0,120)));await p.evaluate(()=>{seek(0);play()});await p.waitForTimeout(1500);await p.evaluate(()=>pause());await p.screenshot({path:S+'/shot_mixer.png'});await p.evaluate(()=>document.querySelector('[data-measure]').click());await p.waitForTimeout(2500);
+ console.log('measure',await p.evaluate(()=>E.lufsI));await p.screenshot({path:S+'/shot_mixer.png'});
+ console.log(errs.join('|')||'no errors');await b.close()})();

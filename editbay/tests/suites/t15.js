@@ -1,0 +1,10 @@
+const { chromium } = require('playwright');const S=process.argv[2];const M=process.argv[3]||S;
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1500,height:950}});const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});await p.addInitScript(()=>{try{localStorage.setItem('editbay.toured','1')}catch(e){}});await p.goto('http://localhost:8765/index.html');await p.waitForTimeout(2000);
+ await p.click('[data-welnew]');await p.fill('#n-title','Polish');await p.click('#newForm button[type=submit]');await p.waitForTimeout(300);
+ await p.setInputFiles('#fileIn',[M+'/media/clipA.mp4']);await p.waitForTimeout(3000);await p.evaluate(()=>{placeMedia(state.media[0].id,'V1',0);seek(4);document.activeElement.blur()});
+ await p.keyboard.press('j');await p.waitForTimeout(1000);console.log('reverse t',await p.evaluate(()=>E.t.toFixed(2)+' rev '+E.rev));await p.keyboard.press('k');
+ await p.evaluate(()=>{E.sel.clear();seek(1)});await p.keyboard.type('+15');await p.keyboard.press('Enter');console.log('nudge playhead',await p.evaluate(()=>E.t.toFixed(2)));
+ await p.evaluate(()=>{E.sel=new Set([v1()[0].id])});await p.keyboard.type('-30');await p.keyboard.press('Enter');console.log('trim',await p.evaluate(()=>cdur(v1()[0]).toFixed(2)));
+ const h=await p.locator('.vsplit.l').boundingBox();await p.mouse.move(h.x+3,h.y+100);await p.mouse.down();await p.mouse.move(h.x+150,h.y+100,{steps:4});await p.mouse.up();
+ console.log('layout',await p.evaluate(()=>JSON.stringify(LAYOUT)));await p.screenshot({path:S+'/shot_layout.png'});
+ console.log(errs.join('|')||'no errors');await b.close()})();

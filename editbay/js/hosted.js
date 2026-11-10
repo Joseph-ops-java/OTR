@@ -3,6 +3,16 @@
    and feedback that reaches you as a prefilled GitHub issue. */
 const CFG=window.EDITBAY_CONFIG||{};
 const HOSTED=!window.claude;
+
+/* Security policy for hosted copies: scripts only from this site and jsDelivr (pinned libraries), and network requests
+   only to the services Edit Bay talks to. If a script were ever injected, it couldn't load more code or send stored
+   API keys anywhere else. Not applied on claude.ai, which manages the page itself. Extra hosts: config.js "connect". */
+if(HOSTED){try{const extra=[CFG.claudeProxy,...(CFG.connect||[])].filter(Boolean).map(u=>{try{return new URL(u).origin}catch(e){return""}}).filter(Boolean).join(" ");
+  const csp=["default-src 'self'","script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'","worker-src 'self' blob: https://cdn.jsdelivr.net",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com","font-src 'self' data: https://fonts.gstatic.com","img-src 'self' data: blob:","media-src 'self' data: blob:",
+    "connect-src 'self' data: blob: https://cdn.jsdelivr.net https://huggingface.co https://*.huggingface.co https://*.hf.co https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.groq.com https://*.workers.dev http://localhost:* http://127.0.0.1:* "+extra,
+    "object-src 'none'","base-uri 'self'","form-action 'self'"].join("; ");
+  const m=document.createElement("meta");m.httpEquiv="Content-Security-Policy";m.content=csp;document.head.appendChild(m)}catch(e){}}
 /* Claude on a hosted copy, two ways:
    1. claudeProxy in config.js: your server holds the key (server/).
    2. Otherwise each tester connects their own Claude API key. It is kept only in this browser and sent only to
