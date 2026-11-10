@@ -208,7 +208,7 @@ function applyOps(ops,alias){const tl=E.tl,done=[],skipped=[];const fix=v=>typeo
       default:throw 0}}catch(e){skipped.push(o&&o.op||"?")}}
   return{done,skipped}}
 async function runAssist(review){if(assistBusy||!E.tl)return;const txtEl=$("#asText");const ask=(txtEl&&txtEl.value.trim())||"";if(!review&&!ask){if(txtEl)txtEl.focus();return}
-  const S=await getSample();if(!S){E.asLog.push({who:"err",text:HOSTED?"Claude isn’t switched on in this test build. Everything else works: cut, colour, sound and export.":"Claude Assist isn’t available in this view. Open Edit Bay on claude.ai while signed in, or send the request to a chat below."});refreshAssist();return}
+  const S=await getSample();if(!S){E.asLog.push({who:"err",text:HOSTED?"Claude isn’t connected on this site yet. Connect it in Help › Connect Claude with your own Claude API key. Everything else works without it.":"Claude Assist isn’t available in this view. Open Edit Bay on claude.ai while signed in, or send the request to a chat below."});refreshAssist();return}
   assistBusy=true;E.asDraft="";E.asLog.push({who:"me",text:review?"Review the cut"+(ask?": "+ask:""):ask});refreshAssist();
   const p=cur(),actId=uid("act");const act={projectId:p.id,title:review?"Reviewing the cut":"Editing: "+ask.slice(0,60),step:review?"Watching frames":"Planning the edit",status:"working",progress:null,startedAt:nowISO(),updatedAt:nowSec(),chat:"Claude Assist in Edit Bay"};
   if(db)db.collection("activity").doc(actId).set(act).catch(()=>{});

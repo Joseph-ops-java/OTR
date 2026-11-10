@@ -62,7 +62,7 @@ Edit Bay is a static site. Any static host works, including GitHub Pages:
 1. In the repository, open **Settings → Pages**, choose **Deploy from a branch**, then `main` and `/ (root)`.
 2. After a minute the editor is at `https://joseph-ops-java.github.io/OTR/editbay/`.
 
-The hosted copy is an installable web app: Chrome and Edge show **Install app**, and it opens offline after the first visit. Hosted copies keep projects and media in each tester's browser (IndexedDB). Everything works except Claude's features, which are off unless you run the proxy in `server/` and put its URL in `config.js`. Feedback from hosted testers opens a prefilled GitHub issue (`feedbackUrl` in `config.js`).
+The hosted copy is an installable web app: Chrome and Edge show **Install app**, and it opens offline after the first visit. Hosted copies keep projects and media in each tester's browser (IndexedDB). Everything works without Claude. To use Claude's features, each tester connects their own Claude API key in **Help › Connect Claude**. The key stays in their browser and goes only to Anthropic. Or you can run the proxy in `server/` and put its URL in `config.js`, so testers don't need a key. Feedback from hosted testers opens a prefilled GitHub issue (`feedbackUrl` in `config.js`).
 
 See `BETA2.md` for what's left before Beta 2.
 
@@ -72,7 +72,7 @@ See `BETA2.md` for what's left before Beta 2.
 |---|---|---|
 | Editing, colour, audio, export, interchange | Yes | Yes |
 | Projects and media | Your account (projects, files up to 20 MB) plus this device | This device (IndexedDB) |
-| Claude: Create, Assist, Review, Smart Auto Cut | Yes | Off, or on through your own proxy (`server/`) |
+| Claude: Create, Assist, Review, Smart Auto Cut | Yes | With the tester's own API key, or through your proxy (`server/`) |
 | Saving files | claude.ai download prompt | Normal browser downloads |
 
 The app asks for platform features with `window.claude.use(name)`. When that returns nothing, it falls back to `LDB` (IndexedDB database), `LBLOB` (device media) and `LDOWN` (downloads) in `js/store.js`.
