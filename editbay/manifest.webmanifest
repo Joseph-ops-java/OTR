@@ -1,0 +1,28 @@
+{
+  "name": "Edit Bay",
+  "short_name": "Edit Bay",
+  "description": "A video editor in your browser, with Claude as your assistant editor.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#151517",
+  "theme_color": "#29292b",
+  "categories": ["photo", "productivity", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "file_handlers": [
+    { "action": "./", "accept": {
+      "video/*": [".mp4", ".mov", ".webm", ".m4v"],
+      "audio/*": [".mp3", ".wav", ".m4a", ".aac", ".ogg"],
+      "image/*": [".jpg", ".jpeg", ".png", ".webp"],
+      "application/json": [".editbay"] } }
+  ],
+  "launch_handler": { "client_mode": "focus-existing" }
+}

@@ -154,7 +154,7 @@ async function importFiles(files){
   for(const f of files){
     if(!/^(video|audio|image)\//.test(f.type)){toast("SKIPPED",f.name+" isn’t a video, audio or image file.");continue}
     if(room&&room.quota&&f.size>room.free*.92){state.note=`${f.name} is ${fmtBytes(f.size)}, but this browser has only ${fmtBytes(room.free)} free for Edit Bay. Free up disk space or import a smaller file.`;renderNote();continue}
-    const tmp=URL.createObjectURL(f);const info=await probe(f,tmp);if(!info){toast("COULDN’T READ",f.name+" (the format may not be supported by this browser: try MP4/H.264, MOV, WebM, MP3, WAV, JPG or PNG)");continue}
+    const tmp=URL.createObjectURL(f);const info=await probe(f,tmp);if(!info){toast("COULDN’T READ",typeof whyUnreadable==="function"?await whyUnreadable(f):f.name+" (the format may not be supported by this browser: try MP4/H.264, MOV, WebM, MP3, WAV, JPG or PNG)");continue}
     const mid=uid("m");const base={projectId:p.id,name:f.name,kind:info.kind,dur:+(info.dur||0).toFixed(3),w:info.w,h:info.h,size:f.size,by:"joe",at:nowSec()};
     E.uploads.push({id:mid,name:f.name,size:f.size});renderMediaBrowser();
     let localId=null,assetId=null,big=false;
