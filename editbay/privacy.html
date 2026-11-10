@@ -17,7 +17,14 @@
 
 <h2>What leaves your device, and when</h2>
 <ul>
-<li><b>Claude features</b> (Create, the Claude chat, Review, Smart Auto Cut), when they're switched on: a text description of your timeline (clip names, timings, titles, captions, markers and transcript text) and up to eight small preview frames are sent to Anthropic's Claude to produce the edit: through your claude.ai account when you use Edit Bay on claude.ai, or, on the hosted site, straight from your browser to the Claude API using the API key you connect. That key is stored only in your browser and sent only to Anthropic. Media files themselves are not sent. Anthropic handles this data under its own terms and privacy policy.</li>
+<li><b>AI features</b> (Create, the AI chat, Review, Smart Auto Cut) use the AI you choose in <b>Help › AI Settings</b>:
+<ul>
+<li><b>On this device:</b> an open model runs in your browser. Nothing is sent anywhere. The model downloads once from Hugging Face.</li>
+<li><b>Google Gemini, OpenRouter, Groq or Claude:</b> a text description of your timeline (clip names, timings, titles, captions, markers and transcript text) is sent to that company's API, using the key you entered. If the model can see images, up to eight small preview frames go too. Media files themselves are never sent. That company handles the data under its own terms and privacy policy. Free tiers may use what you send to improve their models, so check their terms.</li>
+<li><b>Ollama or LM Studio:</b> requests go to your own computer.</li>
+<li><b>On claude.ai:</b> the same description and preview frames go to Anthropic's Claude through your claude.ai account.</li>
+</ul>
+API keys are stored only in your browser and sent only to the service they belong to.</li>
 <li><b>On claude.ai:</b> if you open Edit Bay as a claude.ai Artifact while signed in, your projects and media files up to 20 MB sync to private storage tied to your account. Nobody else can read them, including the app's owner.</li>
 <li><b>Feedback:</b> what you write in the Feedback form, plus optional technical details (browser, screen size, timeline length) if you tick that box. On claude.ai it goes to the app's owner. On the hosted site, it opens a public GitHub issue that you review and post yourself.</li>
 <li><b>Crash reports:</b> on claude.ai, error messages are sent to the owner automatically, with no media or project content.</li>
@@ -27,7 +34,7 @@
 <h2>Third-party services</h2>
 <ul>
 <li><b>Fonts:</b> loaded from Google Fonts. Google receives your IP address when fonts load.</li>
-<li><b>Captions:</b> the speech model and its library come from Hugging Face and jsDelivr, but only when you use captions.</li>
+<li><b>Captions and the on-device AI:</b> the models and their library come from Hugging Face and jsDelivr, but only when you use those features.</li>
 <li><b>GitHub</b> hosts the public test site and receives standard web request logs.</li>
 </ul>
 <p>Edit Bay sets no advertising or tracking cookies.</p>

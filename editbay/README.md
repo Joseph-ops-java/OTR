@@ -62,7 +62,17 @@ Edit Bay is a static site. Any static host works, including GitHub Pages:
 1. In the repository, open **Settings → Pages**, choose **Deploy from a branch**, then `main` and `/ (root)`.
 2. After a minute the editor is at `https://joseph-ops-java.github.io/OTR/editbay/`.
 
-The hosted copy is an installable web app: Chrome and Edge show **Install app**, and it opens offline after the first visit. Hosted copies keep projects and media in each tester's browser (IndexedDB). Everything works without Claude. To use Claude's features, each tester connects their own Claude API key in **Help › Connect Claude**. The key stays in their browser and goes only to Anthropic. Or you can run the proxy in `server/` and put its URL in `config.js`, so testers don't need a key. Feedback from hosted testers opens a prefilled GitHub issue (`feedbackUrl` in `config.js`).
+The hosted copy is an installable web app: Chrome and Edge show **Install app**, and it opens offline after the first visit. Hosted copies keep projects and media in each tester's browser (IndexedDB). Everything works without AI. For the AI features (Create, the AI chat, Review, Smart Auto Cut), each tester picks one in **Help › AI Settings**. None of the free options need payment:
+
+| Option | Cost | Notes |
+|---|---|---|
+| **Google Gemini** | Free key from aistudio.google.com, no card | Recommended. Sees preview frames. |
+| **OpenRouter, Groq** | Free key; OpenRouter models ending in `:free` | Any OpenAI-compatible endpoint works. |
+| **Ollama, LM Studio** | Free, on your own computer | Allow this page with CORS (for Ollama, `OLLAMA_ORIGINS=*`). |
+| **On this device** | Free, offline, no account | Instant command reader for everyday requests (titles, markers, trims, transitions, looks, speed, letterbox). Uses a small open model only on computers with a capable GPU. |
+| **Claude** | Your API key, billed by Anthropic | Or run the proxy in `server/` so testers don't need a key. |
+
+Keys are stored only in the tester's browser and sent only to their own service. Feedback from hosted testers opens a prefilled GitHub issue (`feedbackUrl` in `config.js`).
 
 See `BETA2.md` for what's left before Beta 2.
 
@@ -72,7 +82,7 @@ See `BETA2.md` for what's left before Beta 2.
 |---|---|---|
 | Editing, colour, audio, export, interchange | Yes | Yes |
 | Projects and media | Your account (projects, files up to 20 MB) plus this device | This device (IndexedDB) |
-| Claude: Create, Assist, Review, Smart Auto Cut | Yes | With the tester's own API key, or through your proxy (`server/`) |
+| AI: Create, Assist, Review, Smart Auto Cut | Claude | Free: Gemini key, OpenRouter/Groq free models, Ollama, or the offline command reader. Also Claude with a key or your proxy |
 | Saving files | claude.ai download prompt | Normal browser downloads |
 
 The app asks for platform features with `window.claude.use(name)`. When that returns nothing, it falls back to `LDB` (IndexedDB database), `LBLOB` (device media) and `LDOWN` (downloads) in `js/store.js`.
@@ -85,6 +95,7 @@ Deploy the Cloudflare Worker in `server/` (see `server/README.md`) and set `clau
 
 | File | What it does |
 |---|---|
+| `js/ai.js` | AI Settings: Gemini, OpenAI-compatible (OpenRouter, Groq, Ollama, LM Studio), the offline command reader, and Claude |
 | `config.js`, `js/hosted.js` | Hosted settings (feedback link, optional Claude proxy); hosted-mode Claude and feedback |
 | `server/` | Optional Cloudflare Worker that forwards Claude requests with your API key |
 | `js/icons.js`, `js/store.js` | Icons; device storage (IndexedDB database, media, downloads) |

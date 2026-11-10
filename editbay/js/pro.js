@@ -208,7 +208,7 @@ function applyOps(ops,alias){const tl=E.tl,done=[],skipped=[];const fix=v=>typeo
       default:throw 0}}catch(e){skipped.push(o&&o.op||"?")}}
   return{done,skipped}}
 async function runAssist(review){if(assistBusy||!E.tl)return;const txtEl=$("#asText");const ask=(txtEl&&txtEl.value.trim())||"";if(!review&&!ask){if(txtEl)txtEl.focus();return}
-  const S=await getSample();if(!S){E.asLog.push({who:"err",text:HOSTED?"Claude isn’t connected on this site yet. Connect it in Help › Connect Claude with your own Claude API key. Everything else works without it.":"Claude Assist isn’t available in this view. Open Edit Bay on claude.ai while signed in, or send the request to a chat below."});refreshAssist();return}
+  const S=await getSample();if(!S){E.asLog.push({who:"err",text:HOSTED?"No AI is set up yet. Pick a free one in Help › AI Settings (Google Gemini with a free key works best).":"Claude Assist isn’t available in this view. Open Edit Bay on claude.ai while signed in, or send the request to a chat below."});refreshAssist();return}
   assistBusy=true;E.asDraft="";E.asLog.push({who:"me",text:review?"Review the cut"+(ask?": "+ask:""):ask});refreshAssist();
   const p=cur(),actId=uid("act");const act={projectId:p.id,title:review?"Reviewing the cut":"Editing: "+ask.slice(0,60),step:review?"Watching frames":"Planning the edit",status:"working",progress:null,startedAt:nowISO(),updatedAt:nowSec(),chat:"Claude Assist in Edit Bay"};
   if(db)db.collection("activity").doc(actId).set(act).catch(()=>{});
@@ -224,7 +224,7 @@ async function runAssist(review){if(assistBusy||!E.tl)return;const txtEl=$("#asT
     const sum=res.done.length?res.done.reduce((m,k)=>(m[k]=(m[k]||0)+1,m),{}):null;
     E.asLog.push({who:"",text:String((r&&r.say)||"Done."),ops:sum?Object.entries(sum).map(([k,v])=>v+"× "+k).join(" · ")+(res.skipped.length?" · skipped "+res.skipped.length:""):(res.skipped.length?"skipped "+res.skipped.length+" changes it couldn’t apply":"")});
     if(db)db.collection("activity").doc(actId).set(Object.assign(act,{status:"done",step:String((r&&r.say)||"Done").slice(0,120),progress:1,updatedAt:nowSec()})).catch(()=>{})}
-  catch(e){const c=e&&e.code;const msg=c==="not_granted"?"Claude Assist wasn’t allowed. You can allow it from this page’s Permissions menu.":c==="rate_limited"?"You’ve hit a usage limit. Try again in a little while.":c==="invalid_json"?"Claude’s answer couldn’t be read as edits. Try rephrasing the request more specifically.":"Claude couldn’t finish that ("+(c||"error")+"). Try again.";
+  catch(e){const c=e&&e.code;const msg=HOSTED&&!c&&e&&e.message?e.message:c==="not_granted"?"Claude Assist wasn’t allowed. You can allow it from this page’s Permissions menu.":c==="rate_limited"?"You’ve hit a usage limit. Try again in a little while.":c==="invalid_json"?"Claude’s answer couldn’t be read as edits. Try rephrasing the request more specifically.":"Claude couldn’t finish that ("+(c||"error")+"). Try again.";
     E.asLog.push({who:"err",text:msg});if(db)db.collection("activity").doc(actId).set(Object.assign(act,{status:"error",step:msg,updatedAt:nowSec()})).catch(()=>{})}
   finally{assistBusy=false;refreshAssist()}}
 

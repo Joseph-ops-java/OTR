@@ -5,7 +5,7 @@ const ASR={
   model:"onnx-community/whisper-base_timestamped",
   pipe:null,
   /* replaceable in tests; returns fn(Float32Array 16 kHz mono) -> {chunks:[{text,timestamp:[s,e]}]} */
-  async load(onProgress){if(this.pipe)return this.pipe;const T=await import(this.lib);T.env.allowLocalModels=false;
+  async load(onProgress){if(this.pipe)return this.pipe;const T=await import(this.lib);T.env.allowLocalModels=false;try{if(!navigator.gpu)T.env.backends.onnx.wasm.proxy=true}catch(e){}
     /* WebGPU with half-precision support: fp16 encoder + q4f16 decoder (~110 MB). Otherwise WASM with 8-bit weights (~77 MB). */
     let f16=false;try{const a=navigator.gpu&&await navigator.gpu.requestAdapter();f16=!!(a&&a.features.has("shader-f16"))}catch(e){}
     this.device=f16?"webgpu":"wasm";

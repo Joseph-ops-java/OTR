@@ -118,13 +118,24 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-usagetoggle]")
 document.addEventListener("click",e=>{const b=e.target.closest("#drawerBtn");if(b){const on=!$(".app").classList.contains("drawer");$(".app").classList.toggle("drawer",on);b.setAttribute("aria-expanded",on);return}
   if($(".app").classList.contains("drawer")&&!e.target.closest(".browser-p")&&!e.target.closest(".ctx,.ov")&&matchMedia("(max-width:1100px) and (min-width:701px)").matches){$(".app").classList.remove("drawer");const d=$("#drawerBtn");if(d)d.setAttribute("aria-expanded","false")}});
 
-/* ---------- 10. hosted copies: Connect Claude (tester's own key) ---------- */
+/* ---------- 10. hosted copies: AI Settings (free on-device model, Gemini free key, OpenRouter/Groq/Ollama, or Claude) ---------- */
 if(HOSTED&&!CFG.claudeProxy){
-  const _gsH=getSample;getSample=async function(){const s=await _gsH();if(!s&&navigator.userActivation&&navigator.userActivation.isActive&&!$("#sh-claude"))connectClaude();return s};
-  (function(){const fm=$("#fileMenu");const ab=fm&&fm.querySelector('[data-fm="about"]');if(ab&&!fm.querySelector("[data-connectclaude]"))ab.insertAdjacentHTML("beforebegin",`<button role="menuitem" data-connectclaude="1">Connect Claude…</button>`)})();
-  const _clH=cmdList;cmdList=function(){const L=_clH();L.push({g:"Claude",l:myKey()?"Change or disconnect Claude API key":"Connect Claude (your API key)",f:connectClaude});return L};
-  setInterval(()=>{const t=$("#liveTxt");if(t&&!myKey()&&/idle/i.test(t.textContent))t.textContent="Claude not connected"},2000);
-  document.addEventListener("click",e=>{if(e.target.closest("#liveBtn")&&!myKey()){e.preventDefault();e.stopImmediatePropagation();connectClaude()}},true);
-  const _riH=renderInsp;renderInsp=function(){_riH();if(state.itab!=="claude"||myKey())return;const box=$("#insp");if(!box||box.querySelector(".ccard"))return;const head=box.querySelector(".assist,.chat")||box.firstElementChild;if(!head)return;
-    head.insertAdjacentHTML("beforebegin",`<div class="ccard"><b>Connect Claude to edit with it</b><p>On this site Claude runs on your own Claude API key. It’s stored only in this browser.</p><button class="btn purple sm" data-connectclaude="1">Connect Claude</button></div>`)};
+  const _gsH=getSample;getSample=async function(){const s=await _gsH();if(!s&&navigator.userActivation&&navigator.userActivation.isActive&&!$("#sh-claude"))openAISettings();return s};
+  (function(){const fm=$("#fileMenu");const ab=fm&&fm.querySelector('[data-fm="about"]');if(ab&&!fm.querySelector("[data-connectclaude]"))ab.insertAdjacentHTML("beforebegin",`<button role="menuitem" data-connectclaude="1">AI Settings…</button>`)})();
+  const _clH=cmdList;cmdList=function(){const L=_clH();L.push({g:"AI",l:"AI settings ("+aiLabel()+")",f:openAISettings});return L};
+  setInterval(()=>{const t=$("#liveTxt");if(t&&/idle|not connected|not set up|^AI:/i.test(t.textContent))t.textContent=aiReady()?"AI: "+aiLabel():"AI not set up"},1500);
+  document.addEventListener("click",e=>{if(e.target.closest("#liveBtn")&&!aiReady()){e.preventDefault();e.stopImmediatePropagation();openAISettings()}},true);
+  /* the chat panel is rebuilt by assistPanel(), so the card goes in there */
+  const _apH=assistPanel;assistPanel=function(){_apH();if(aiReady())return;const a=$("#assist");if(!a||a.querySelector(".ccard"))return;
+    a.insertAdjacentHTML("afterbegin",`<div class="ccard"><b>Set up AI to edit by asking</b><p>Free options: Google Gemini with a free key (recommended), OpenRouter or Groq free models, or a small model that runs in this browser.</p><button class="btn purple sm" data-connectclaude="1">Choose an AI</button></div>`)};
+}
+
+/* hosted copies may run Gemini, a free model or the offline reader, so name the tab and panel "AI" there */
+if(HOSTED&&!CFG.claudeProxy){
+  const relabel=()=>{const tb=document.querySelector('#itabs [data-itab="claude"],#itabs button[data-t="claude"]')||[...document.querySelectorAll("#itabs button")].find(b=>b.textContent.trim()==="Claude");if(tb&&aiConf().p!=="claude")tb.textContent="AI";
+    const a=$("#assist");if(a&&aiConf().p!=="claude"){a.setAttribute("aria-label","AI");const t=$("#asText");if(t&&/Claude/.test(t.placeholder))t.placeholder=t.placeholder.replace(/Claude/g,"the AI")}
+    if(aiConf().p==="claude")return;
+    /* swap the word in visible text only (never ids, data or user content such as clip names) */
+    ["#assist .hello","#tlc .etl-empty","#bgLbl"].forEach(sel=>document.querySelectorAll(sel).forEach(el=>{const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode()))if(/\bClaude\b/.test(n.nodeValue)&&!n.parentElement.closest(".turn,.msg,.ccard"))n.nodeValue=n.nodeValue.replace(/Edit with Claude/g,"Edit with AI").replace(/Tell Claude/g,"Tell the AI").replace(/\bClaude\b/g,"AI")}))};
+  const _rnL=render;render=function(){_rnL();relabel()};const _apL=assistPanel;assistPanel=function(){_apL();relabel()};
 }
