@@ -22,6 +22,11 @@ Then open http://localhost:8080 in Chrome or Edge.
 - **Editing:** a magnetic timeline (V1–V3 and A1–A3, expandable to six video and six audio tracks), with a Source viewer for marking In/Out and inserting, overwriting, appending or connecting onto a chosen track.
 - **Tools:** match frame, slip, roll, blade, ripple delete, freeze frame, multicam synced by audio, J/K/L including reverse, and typed frame nudges.
 
+### Finding your way
+- **Command search (⌘K):** every command, effect, transition, page and project in one search box.
+- **Right-click menus:** on clips (split, reverse, freeze, detach audio, open in Source, ask Claude, delete) and on empty timeline space (paste, title, marker).
+- **Track controls:** show/hide, lock, mute and solo, with labelled icons.
+
 ### Picture
 - **Speed:** ramps (Montage, Hero, Bullet, Flash in/out, Jump cut) and reverse.
 - **Effects:** 20 transitions (overlays and titles can animate in and out with any of them), keyframes for position, scale, opacity, colour, crop, border, shadow and effect strength, and titles with animation presets.
@@ -83,6 +88,7 @@ The AI features call `sample.json(prompt, {images})` and expect a JSON reply (se
 | `js/fx.js` | Transitions (20), stackable effects, crop/border/shadow, blend modes, GPU chroma key, Effects browser |
 | `js/fixes.js` | Preview quality, keyframes for colour/crop/effects, overlay in/out transitions, extra tracks, complete Paste Attributes, LUTs in project files |
 | `js/ux.js` | Navigation, title-bar actions, collapsible Inspector, empty states, media search, export presets |
+| `js/ux3.js` | Command search, right-click menus, track control icons, recent projects, export preset preselection |
 | `js/ux2.js` | Timeline windowing on scroll, undo history, automatic backups, rebindable shortcuts |
 | `js/chat.js`, `js/beta.js` | Claude conversation and Scenes; private storage, feedback, crash reports, tour |
 | `js/suite.js` | File menu, project files, versions, EDL/FCPXML/still export, storage, welcome, About |
