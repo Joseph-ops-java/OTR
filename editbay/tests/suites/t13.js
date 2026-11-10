@@ -1,0 +1,15 @@
+const { chromium } = require('playwright');const S=process.argv[2];const M=process.argv[3]||S;
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1500,height:950}});const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});await p.addInitScript(()=>{try{localStorage.setItem('editbay.toured','1')}catch(e){}});await p.goto('http://localhost:8765/index.html');await p.waitForTimeout(2000);
+ await p.click('[data-welnew]');await p.fill('#n-title','Grade');await p.check('input[name=n-shape][value=\"1920x1080\"]',{force:true});await p.click('#newForm button[type=submit]');await p.waitForTimeout(300);
+ await p.setInputFiles('#fileIn',[M+'/media/gop.mp4']);await p.waitForTimeout(3500);
+ await p.evaluate(()=>{placeMedia(state.media[0].id,'V1',0);E.sel=new Set([v1()[0].id]);seek(2)});await p.waitForTimeout(600);
+ const px=()=>p.evaluate(()=>{drawFrame();const c=document.getElementById('pgm');const x=document.createElement('canvas');x.width=c.width;x.height=c.height;const g=x.getContext('2d');g.drawImage(c,0,0);return [[100,500],[500,500],[960,500]].map(([a,b])=>Array.from(g.getImageData(a,b,1,1).data).slice(0,3).join(','))});
+ console.log('gl',await p.evaluate(()=>glOK()),'plain',await px());
+ await p.evaluate(()=>setPage('color'));await p.waitForTimeout(500);
+ await (await p.evaluateHandle(()=>lutIn)).asElement().setInputFiles(M+'/media/invert.cube');await p.waitForTimeout(800);console.log('lut',await px());
+ await p.evaluate(()=>{edit(()=>{const c=v1()[0];delete c.lut;c.curves={m:[[0,0],[.5,.25],[1,1]]}})});await p.waitForTimeout(200);console.log('curve',await px());
+ await p.evaluate(()=>{edit(()=>{const c=v1()[0];delete c.curves;c.lgg={gain:[.6,0,0]}})});console.log('gain wheel',await px());
+ await p.evaluate(()=>{edit(()=>{const c=v1()[0];delete c.lgg;Object.assign(c,LOOKS.film[1])})});console.log('film look',await px());
+ console.log('graded ms/frame',await p.evaluate(()=>{const t=performance.now();for(let i=0;i<20;i++)drawFrame();return ((performance.now()-t)/20).toFixed(1)}));
+ await p.evaluate(()=>{edit(()=>{const c=v1()[0];c.lut=Object.keys(LUTS)[0];c.lutMix=.5})});await p.evaluate(()=>{$("#insp").dataset.k="";renderColorPage()});await p.waitForTimeout(300);await p.screenshot({path:S+'/shot_grade.png'});
+ console.log(errs.join('|')||'no errors');await b.close()})();

@@ -1,0 +1,41 @@
+name: Edit Bay tests
+
+on:
+  pull_request:
+    paths: ["editbay/**", ".github/workflows/editbay-tests.yml"]
+  push:
+    branches: [main]
+    paths: ["editbay/**", ".github/workflows/editbay-tests.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install ffmpeg
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+      - name: Install Playwright Chromium
+        working-directory: editbay/tests
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Make test media
+        run: editbay/tests/make-fixtures.sh
+      - name: Run browser tests
+        run: node editbay/tests/run.js
+      - name: Keep screenshots and exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editbay-test-output
+          path: editbay/tests/out
+          if-no-files-found: ignore
+          retention-days: 7
