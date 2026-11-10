@@ -5,7 +5,7 @@ E.asLog=[];E.scope="wave";E.grade=null;
 
 /* ---------- pages ---------- */
 const PAGES=[["edit","edit","Edit"],["color","color","Color"],["audio","audio","Audio"],["deliver","deliver","Deliver"]];
-function renderPagebar(){const b=$("#pagebar");if(!b)return;b.innerHTML=PAGES.map(([k,i,l],n)=>`<button data-page="${k}" aria-pressed="${E.page===k}" title="${l} page (⌘${n+1})">${ic(i)}${l}</button>`).join("")+`<span class="ptools"><button class="ai" id="autoBtn" title="Auto Cut: cut your clips to the music, with Claude choosing the story">${ic("auto")}Auto Cut</button><button id="mcBtn" title="New multicam clip from 2–4 camera angles">${ic("multicam")}Multicam</button><button id="angBtn" title="Show or hide the angle viewer">${ic("angles")}Angles</button><button id="silBtn" title="Remove pauses from clips with dialogue">${ic("pauses")}Pauses</button></span><span class="hint">Press ? for shortcuts</span>`}
+function renderPagebar(){const b=$("#pagebar");if(!b)return;b.innerHTML=PAGES.map(([k,i,l],n)=>`<button data-page="${k}" aria-pressed="${E.page===k}" title="${l} page (⌘${n+1})">${ic(i)}${l}</button>`).join("")+`<span class="ptools"><button class="ai" id="createBtn" title="Create a video from a prompt: Claude writes the script and builds the edit from your footage">${ic("film")}Create</button><button class="ai" id="autoBtn" title="Auto Cut: cut your clips to the music, with Claude choosing the story">${ic("auto")}Auto Cut</button><button id="mcBtn" title="New multicam clip from 2–4 camera angles">${ic("multicam")}Multicam</button><button id="angBtn" title="Show or hide the angle viewer">${ic("angles")}Angles</button><button id="silBtn" title="Remove pauses from clips with dialogue">${ic("pauses")}Pauses</button></span><span class="hint">Press ? for shortcuts</span>`}
 function setPage(p){if(!PAGES.find(x=>x[0]===p))return;E.page=p;
   if(p==="color"&&E.tl&&!selClips().some(c=>c.type==="video"||c.type==="image")){const c=E.tl.clips.filter(c=>(c.type==="video"||c.type==="image")&&E.t>=c.start&&E.t<cend(c)).sort((a,b)=>a.track==="V1"?-1:1)[0]||E.tl.clips.find(c=>c.type==="video"||c.type==="image");if(c)E.sel=new Set([c.id])}
   if(p==="edit"&&state.itab==="color")state.itab="info";
@@ -156,7 +156,7 @@ function tlSummary(){const tl=E.tl,r3=v=>+(+v).toFixed(3);
       if(c.mediaId){o.media=c.mediaId;o.in=r3(c.in);o.out=r3(c.out)}if(c.name)o.name=c.name;if(c.text)o.text=c.text;["speed","vol","op","scale","x","y","rot","fadeIn","fadeOut","look","off","style","pan","bri","con","sat","temp","tint"].forEach(k=>{if(c[k]!=null&&c[k]!==0&&!(k==="speed"&&c[k]===1)&&!(k==="vol"&&c[k]===1)&&!(k==="op"&&c[k]===1)&&!(k==="scale"&&c[k]===1))o[k]=c[k]});
       if(c.tr)o.transitionIn=c.tr;if(c.kf)o.keyframes=Object.keys(c.kf);return o}),
     markers:(tl.markers||[]).filter(m=>m.kind!=="beat").map(m=>({t:r3(m.t),text:m.text,by:m.by})),beats:(tl.markers||[]).filter(m=>m.kind==="beat").map(m=>r3(m.t)).slice(0,200),
-    media:projMedia().slice(0,80).map(m=>({id:m.id,name:m.name,kind:m.kind,dur:r3(m.dur||0),w:m.w,h:m.h}))}}
+    transcript:typeof txUnits==="function"?txUnits().slice(0,700).map(u=>[r3(u.a),r3(u.b),u.t]):[],media:projMedia().slice(0,80).map(m=>({id:m.id,name:m.name,kind:m.kind,dur:r3(m.dur||0),w:m.w,h:m.h}))}}
 const ASSIST_RULES=`You are the editor inside Edit Bay, a video editor. You change the timeline by returning operations. The person's editing rules: tell a story (beginning, middle, end), draw the metaphor literally, set up then pay off, every graphic must say something, real over invented (never make up names, dates, venues or facts that are not in the timeline or request), make it feel like a movie (pacing, grade, letterbox, sound), and hook the audience in the first seconds.
 Timeline model: V1 is the magnetic storyline (no gaps; clips pack left to right; order is by start). V2 and V3 sit above V1 (overlays, titles; V3 is captions). A1–A3 are audio. Times are seconds. A clip shows from start for dur; in/out are source seconds.
 Reply with ONLY JSON: {"say":"one or two plain sentences on what you changed and why","ops":[...]}. Use [] when nothing should change. Operations, applied in order:
@@ -173,6 +173,7 @@ Reply with ONLY JSON: {"say":"one or two plain sentences on what you changed and
 {"op":"marker","t":s,"text":"note"}
 {"op":"timeline","set":{"bars":2.39|2|1.85|0,"bg":"#000000"}}
 {"op":"track","track":"A2","set":{"gain":0.5,"mute":false,"solo":false}}
+{"op":"cut_range","from":s,"to":s} — ripple-delete that stretch of the storyline (use the transcript's timeline times to cut by what people say).
 Only reference ids and media ids that exist. Keep changes focused on the request.`;
 async function getSample(){if(sampleNS)return sampleNS;try{sampleNS=window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(e){sampleNS=null}
   if(sampleNS)sampleCaps=await sampleNS.limits().catch(()=>null);return sampleNS}
@@ -200,6 +201,7 @@ function applyOps(ops,alias){const tl=E.tl,done=[],skipped=[];const fix=v=>typeo
       case"kf":{if(!c||!KF_PROPS.includes(o.prop)||!fix(o.t)||!fix(o.v))throw 0;setKf(c,o.prop,c.start+o.t,o.v);done.push("keyframe");break}
       case"marker":{if(!fix(o.t))throw 0;(tl.markers=tl.markers||[]).push({id:uid("mk"),t:clamp(o.t,0,tlDur()),text:String(o.text||""),by:"claude"});done.push("marker");break}
       case"timeline":{const s=o.set||{};if(fix(s.bars))tl.bars=s.bars;if(typeof s.bg==="string")tl.bg=s.bg;done.push("timeline");break}
+      case"cut_range":{if(!fix(o.from)||!fix(o.to)||o.to<=o.from)throw 0;cutRangesRaw(tl,[[o.from,o.to]]);done.push("cut");break}
       case"track":{if(!TRACKS.includes(o.track))throw 0;tl.tracks[o.track]=Object.assign(tl.tracks[o.track]||{},o.set||{});done.push("track");break}
       default:throw 0}}catch(e){skipped.push(o&&o.op||"?")}}
   return{done,skipped}}

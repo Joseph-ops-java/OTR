@@ -14,7 +14,8 @@ setInterval(renderSaveChip,800);
 const hasSource=m=>!!blobUrl(m);
 function mediaBadge(m){if(!hasSource(m))return`<span class="mb off">OFFLINE</span>`;if(m.localId&&!m.assetId&&state.cloud)return`<span class="mb dev">DEVICE</span>`;if(m.proxy)return`<span class="mb px">PROXY</span>`;return""}
 function mediaActions(m){if(!hasSource(m))return` · <span class="lnk" data-relink="${esc(m.id)}">relink</span>`;
-  if(m.localId&&!m.assetId&&assets&&!assets.local)return` · <span class="lnk" data-proxy="${esc(m.id)}">make cloud proxy</span>`;return""}
+  let h="";if(m.kind==="video"&&typeof FAST_OK!=="undefined"&&FAST_OK&&!m.pxLocalId)h+=` · <span class="lnk" data-optimize="${esc(m.id)}" title="Make a light copy for smooth playback (exports still use the original)">optimize</span>`;
+  if(m.localId&&!m.assetId&&assets&&!assets.local)h+=` · <span class="lnk" data-proxy="${esc(m.id)}">make cloud proxy</span>`;return h}
 
 /* ---------- File menu ---------- */
 const fm=$("#fileMenu"),fmb=$("#fileMenuBtn");
@@ -36,7 +37,9 @@ function fileAction(k){
   else if(k==="export"){if(needProject())openExport()}
   else if(k==="frame"){if(needProject())exportFrame()}
   else if(k==="edl"){if(needProject())exportEDL()}
+  else if(k==="fcpxml"){if(needProject())exportFCPXML()}
   else if(k==="saveproj"){if(needProject())saveProjectFile()}
+  else if(k==="create")openCreate();
   else if(k==="storage")openSuite("storage");
   else if(k==="about")openSuite("about")}
 function fname(s){return String(s||"Edit Bay").replace(/[^\w\- ]+/g,"").trim().replace(/\s+/g,"_")||"edit"}
@@ -72,7 +75,8 @@ const _importFiles=importFiles;importFiles=async function(files){const before=ne
     state.media=state.media.filter(x=>x.id!==o.id);if(db)db.doc("media/"+o.id).delete().catch(()=>{})});
   if(n){toast("RELINKED",n+" offline clip"+(n>1?"s":"")+" reconnected.");renderMediaBrowser();requestDraw()}};
 document.addEventListener("click",e=>{const r=e.target.closest("[data-relink]");if(r){e.stopPropagation();$("#fileIn").click();return}
-  const px=e.target.closest("[data-proxy]");if(px){e.stopPropagation();makeProxy(mediaOf(px.dataset.proxy))}},true);
+  const px=e.target.closest("[data-proxy]");if(px){e.stopPropagation();makeProxy(mediaOf(px.dataset.proxy))}
+  const op=e.target.closest("[data-optimize]");if(op){e.stopPropagation();optimizeMedia(mediaOf(op.dataset.optimize))}},true);
 
 /* ---------- duplicate + versions ---------- */
 function duplicateProject(){const p=cur(),tl=clone(E.tl||state.timelines[p.id]);const pid=uid("p");const np=Object.assign(clone(p),{id:pid,title:p.title+" copy",createdAt:nowISO(),updatedAt:nowISO(),log:[{id:uid("e"),at:nowISO(),who:"joe",type:"stage",stage:p.stage,text:"Duplicated from "+p.title}]});
@@ -91,6 +95,8 @@ async function makeProxy(m){if(!m||!m.localId)return;if(!assets||assets.local){t
   try{let blob;
     if(m.kind==="image"){const im=new Image();im.src=src;await im.decode();const sc=Math.min(1,3840/Math.max(im.naturalWidth,im.naturalHeight));const c=document.createElement("canvas");c.width=Math.round(im.naturalWidth*sc);c.height=Math.round(im.naturalHeight*sc);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
       for(const q of[.9,.8,.65,.5]){blob=await new Promise(r=>c.toBlob(r,"image/jpeg",q));if(blob.size<LIM)break}}
+    else if(m.kind==="video"&&typeof FAST_OK!=="undefined"&&FAST_OK){const dur=m.dur||1;const bits=LIM*8/dur;if(bits<300e3)throw new Error(`At ${Math.round(dur/60)} min this clip can’t fit a ${MAXMB} MB proxy. Split or trim it first.`);
+      blob=await transcode(m,{maxEdge:1280,bitrate:Math.min(4e6,Math.max(250e3,bits-200e3)),fps:30,onp:f=>{job.pct=f;renderMediaBrowser()}})}
     else{const dur=m.dur||1;const bits=LIM*8/dur;if(bits<300e3)throw new Error(`At ${Math.round(dur/60)} min this clip can’t fit a ${MAXMB} MB proxy. Split or trim it first.`);
       const el=document.createElement(m.kind==="audio"?"audio":"video");el.src=src;el.crossOrigin="anonymous";el.playsInline=true;await loadMeta(el);
       const ac=new(window.AudioContext||window.webkitAudioContext)();const sn=ac.createMediaElementSource(el);const dst=ac.createMediaStreamDestination();sn.connect(dst);
@@ -122,10 +128,11 @@ async function suiteModal(k){const box=$("#modal");if(box.dataset.k===k)return;b
     <div class="acts"><button type="button" class="btn" data-sx="1">Close</button></div>`}
   else if(k==="about")h=`<h3 style="display:flex;gap:8px;align-items:center">${ic("film")} Edit Bay <span class="mono" style="font-size:11px;color:var(--dim)">v${APP_VERSION}</span></h3>
     <div style="font-size:12.5px;line-height:1.55;display:flex;flex-direction:column;gap:8px">
-    <p style="margin:0">A video editor that runs in your browser, with Claude as your assistant editor: a magnetic timeline, multicam, transitions, keyframes, colour with scopes, a mixer, captions, Auto Cut and exports up to 4K.</p>
+    <p style="margin:0">A video editor that runs in your browser, with Claude as your assistant editor: Create from a prompt, a magnetic timeline with a Source viewer and three-point editing, multicam, transitions, keyframes, speed ramps, GPU colour with wheels, curves and LUTs, a mixer with EQ, compression and loudness metering, transcript editing, Auto Cut, and exports up to 4K.</p>
     <p style="margin:0"><b>Your media.</b> Footage stays in this browser unless you sync it. ${state.cloud?"Projects and small media sync to your claude.ai account.":"Nothing is uploaded while you work offline."}</p>
     <p style="margin:0"><b>AI features.</b> Claude Assist, Review and Smart Auto Cut send a description of your timeline and, for review and Auto Cut, small preview frames to Claude. Claude can make mistakes: check its edits before you deliver. Every AI edit can be undone with ⌘Z.</p>
-    <p style="margin:0"><b>Exports</b> are made on your device in real time. MP4 (H.264/AAC) where the browser supports it, otherwise WebM.</p>
+    <p style="margin:0"><b>Exports</b> render frame by frame on your device to MP4 (H.264 with AAC, or Opus where the browser lacks AAC), labelled Rec.709, with loudness normalised to your target (−14, −16 or −23 LUFS) and peaks limited to −1 dB. Browsers without WebCodecs record in real time instead.</p>
+    <p style="margin:0"><b>Interchange.</b> FCPXML for Final Cut Pro and DaVinci Resolve, EDL (CMX 3600), and .editbay project files.</p>
     <p style="margin:0;color:var(--dim)">Typefaces from Google Fonts under the SIL Open Font License. You are responsible for having the rights to the media and music you edit and publish.</p></div>
     <div class="acts"><button type="button" class="btn" id="aboutKeys">Keyboard shortcuts</button><button type="button" class="btn blue" data-sx="1">Done</button></div>`;
   box.innerHTML=`<div class="ov" id="ov"><div class="dlg au" role="dialog" aria-label="${esc(k)}">${h}</div></div>`;const n=$("#verName");if(n)n.focus()}
@@ -148,10 +155,34 @@ document.addEventListener("keydown",e=>{if(e.target&&e.target.id==="verName"&&e.
 
 /* ---------- welcome ---------- */
 const _rv=renderViewer;renderViewer=function(){if(!cur()&&state.mode!=="loading"){$("#vName").textContent="Welcome";$("#vMeta").textContent="";$("#transport").innerHTML="";
-    $("#vArea").innerHTML=`<div class="welcome">${ic("film","big")}<h2>Start editing</h2><p>Make a project, drop in footage of any size, and cut. Claude can edit alongside you: ask it in the Inspector, or let Auto Cut build a first cut to your music.</p><div class="wacts"><button class="btn blue" data-welnew="1">New project</button><button class="btn" data-welopen="1">Open project file…</button></div><small>Your media stays in this browser unless you choose to sync it.</small></div>`;return}
+    $("#vArea").innerHTML=`<div class="welcome">${ic("film","big")}<h2>Start editing</h2><p>Make a project, drop in footage of any size, and cut. Claude can edit alongside you: ask it in the Inspector, or let Auto Cut build a first cut to your music.</p><div class="wacts"><button class="btn blue" data-welnew="1">New project</button><button class="btn purple" data-create="1">Create from a prompt</button><button class="btn" data-welopen="1">Open project file…</button></div><small>Your media stays in this browser unless you choose to sync it.</small></div>`;return}
   _rv()};
 window.addEventListener("DOMContentLoaded",()=>{setTimeout(()=>{watchVersions();renderSaveChip()},1500)});
 /* never lose the last edit: flush the debounced timeline save when the page is hidden or closed */
 function flushSaves(){if(E.saveT&&E.pid){clearTimeout(E.saveT);E.saveT=null;saveNow(E.pid)}Object.keys(timers).forEach(k=>{if(k==="__r")return;clearTimeout(timers[k]);delete timers[k];const p=state.projects.find(x=>x.id===k);if(p)persist(p)})}
 window.addEventListener("pagehide",flushSaves);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushSaves()});
 window.addEventListener("beforeunload",e=>{if(E.x&&E.x.phase==="running"||AU.busy||E.uploads.length){e.preventDefault();e.returnValue=""}flushSaves()});
+
+/* ---------- FCPXML 1.9 (Final Cut Pro, DaVinci Resolve; Premiere via XtoCC) ---------- */
+function exportFCPXML(){const tl=E.tl;if(!tl||!tl.clips.length){toast("FCPXML","The timeline is empty.");return}const fps=Math.round(tl.fps||30);
+  const R=t=>`${Math.max(0,Math.round(t*fps))}/${fps}s`,X=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const used=[...new Set(tl.clips.filter(c=>c.mediaId&&!c.off).map(c=>c.mediaId))].map(mediaOf).filter(Boolean);const aid={};let rid=3;
+  let res=`<format id="r1" name="FFVideoFormat${tl.h}p${fps}" frameDuration="1/${fps}s" width="${tl.w}" height="${tl.h}"/>\n<effect id="r2" name="Cross Dissolve" uid="FxPlug:4731E73A-8DAC-4113-9A30-AE85B1761265"/>\n<effect id="rT" name="Basic Title" uid=".../Titles.localized/Bumper:Opener.localized/Basic Title.localized/Basic Title.moti"/>\n`;
+  used.forEach(m=>{aid[m.id]="r"+(rid++);const d=m.kind==="image"?3600:(m.dur||1);res+=`<asset id="${aid[m.id]}" name="${X(m.name.replace(/\.[^.]+$/,""))}" start="0s" duration="${R(d)}" hasVideo="${m.kind!=="audio"?1:0}" hasAudio="${m.kind!=="image"?1:0}" format="r1" audioSources="1" audioChannels="2" audioRate="48000"><media-rep kind="original-media" src="file:///EditBayMedia/${encodeURIComponent(m.name)}"/></asset>\n`});
+  const vol=c=>{const v=c.vol==null?1:c.vol;return v!==1&&v>0?`<adjust-volume amount="${(20*Math.log10(v)).toFixed(1)}dB"/>`:v===0?`<adjust-volume amount="-96dB"/>`:""};
+  const xf=c=>{const s=c.scale||1;return s!==1||c.x||c.y||c.rot?`<adjust-transform position="${((c.x||0)*100).toFixed(2)} ${(-(c.y||0)*100).toFixed(2)}" scale="${s.toFixed(3)} ${s.toFixed(3)}" rotation="${-(c.rot||0)}"/>`:""};
+  const note=c=>(c.ramp||c.reverse||(c.speed&&c.speed!==1)||c.freeze)?`<!-- Edit Bay: ${c.freeze?"freeze frame":c.reverse?"reverse":c.ramp?"speed ramp":"speed "+c.speed+"x"} is not carried over; re-apply it in the NLE -->`:"";
+  const child=(c,host,hostIn,lane)=>{const off=hostIn+(c.start-host.start);if(c.type==="title"){const txt=X(String(c.text||"Title"));return`<title ref="rT" lane="${lane}" offset="${R(off)}" name="${X(txt.split("\n")[0])}" start="0s" duration="${R(cdur(c))}"><text><text-style ref="ts-${c.id}">${txt}</text-style></text><text-style-def id="ts-${c.id}"><text-style font="${X(c.font||"Helvetica")}" fontSize="${Math.round((c.size||8)/100*tl.h)}" fontColor="1 1 1 1" alignment="${c.align||"center"}"/></text-style-def></title>`}
+    const m=mediaOf(c.mediaId);if(!m)return"";return`<asset-clip ref="${aid[m.id]}" lane="${lane}" offset="${R(off)}" name="${X(c.name||m.name)}" start="${R(c.freeze?(c.fz||0):Math.min(c.in,c.out))}" duration="${R(cdur(c))}"${m.kind==="audio"?' audioRole="dialogue"':""}>${note(c)}${xf(c)}${vol(c)}</asset-clip>`};
+  const laneOf={V2:1,V3:2,A1:-1,A2:-2,A3:-3};const others=tl.clips.filter(c=>c.track!=="V1"&&!c.off);const spineClips=v1().filter(c=>!c.off);
+  let spine="";let t=0;const hostFor=c=>spineClips.find(h=>c.start>=h.start-1e-6&&c.start<cend(h))||null;const placed=new Set();
+  spineClips.forEach((h,i)=>{if(h.tr&&h.tr.type&&i>0){const d=Math.min(h.tr.d||.5,cdur(h),cdur(spineClips[i-1]));spine+=`<transition name="Cross Dissolve" offset="${R(h.start-d/2)}" duration="${R(d)}"><filter-video ref="r2" name="Cross Dissolve"/></transition>\n`}
+    const m=mediaOf(h.mediaId),hin=h.type==="gap"||!m?0:(h.freeze?(h.fz||0):Math.min(h.in,h.out));
+    const kids=others.filter(c=>!placed.has(c.id)&&hostFor(c)===h).map(c=>{placed.add(c.id);return child(c,h,hin,laneOf[c.track]||1)}).join("");
+    const mk=(tl.markers||[]).filter(k=>k.kind!=="beat"&&k.t>=h.start&&k.t<cend(h)).map(k=>`<marker start="${R(hin+k.t-h.start)}" duration="1/${fps}s" value="${X(k.text||"Marker")}"/>`).join("");
+    if(h.type==="gap"||!m||h.type==="title")spine+=`<gap name="Gap" offset="${R(h.start)}" start="0s" duration="${R(cdur(h))}">${kids}${mk}</gap>\n`;
+    else spine+=`<${m.kind==="image"?"video":"asset-clip"} ref="${aid[m.id]}" offset="${R(h.start)}" name="${X(h.name||m.name)}" start="${R(hin)}" duration="${R(cdur(h))}">${note(h)}${xf(h)}${vol(h)}${mk}${kids}</${m.kind==="image"?"video":"asset-clip"}>\n`});
+  const rest=others.filter(c=>!placed.has(c.id));if(rest.length){const s=Math.min(...rest.map(c=>c.start)),e=Math.max(...rest.map(cend)),g={start:s};spine+=`<gap name="Gap" offset="${R(Math.max(s,tlDurV1()))}" start="0s" duration="${R(e-Math.max(s,tlDurV1()))}">${rest.map(c=>child(c,{start:Math.max(s,tlDurV1())},0,laneOf[c.track]||1)).join("")}</gap>\n`}
+  const xml=`<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE fcpxml>\n<fcpxml version="1.9">\n<resources>\n${res}</resources>\n<library>\n<event name="Edit Bay">\n<project name="${X(cur().title)}">\n<sequence format="r1" duration="${R(tlDur())}" tcStart="0s" tcFormat="NDF" audioLayout="stereo" audioRate="48k">\n<spine>\n${spine}</spine>\n</sequence>\n</project>\n</event>\n</library>\n</fcpxml>\n`;
+  saveFile(fname(cur().title)+".fcpxml",new Blob([xml],{type:"application/xml"}));toast("FCPXML","Media is referenced by file name: relink to your originals when the NLE asks.")}
+function tlDurV1(){const l=v1();return l.length?cend(l[l.length-1]):0}
