@@ -21,7 +21,7 @@ const _renderLibs=renderLibs;renderLibs=function(){if(!$("#libs"))return;_render
 const _renderItabs=renderItabs;
 renderItabs=function(){if(E.page==="color"){$("#itabs").innerHTML=`<button aria-pressed="true">Color</button>`;return}_renderItabs()};
 const _renderInsp=renderInsp;
-renderInsp=function(){if(E.page==="color")return renderColorPage();_renderInsp();if(state.itab==="claude"&&cur())assistPanel()};
+renderInsp=function(){const box=$("#insp");box.classList.toggle("chatmode",E.page!=="color"&&state.itab==="claude"&&!!cur());if(E.page==="color")return renderColorPage();_renderInsp();if(state.itab==="claude"&&cur())assistPanel()};
 function renderPagePane(){const p=cur(),body=$("#bbody");if(!p){body.innerHTML=`<div class="empty">Pick a project first.</div>`;return}
   if(E.page==="color")return scopesPane(body);if(E.page==="audio")return mixerPane(body);if(E.page==="deliver")return deliverPane(body)}
 

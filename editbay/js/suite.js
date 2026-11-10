@@ -1,6 +1,6 @@
 /* Edit Bay — product shell: File menu, project files (.editbay), versions, EDL + still export, storage manager with cloud proxies,
    relinking of offline media, save status, welcome screen and About. */
-const APP_VERSION="1.0";
+const APP_VERSION="Beta 1.0";
 document.querySelectorAll("[data-ic]").forEach(el=>el.insertAdjacentHTML("afterbegin",ic(el.dataset.ic)));
 
 /* ---------- save status ---------- */
@@ -19,14 +19,14 @@ function mediaActions(m){if(!hasSource(m))return` · <span class="lnk" data-reli
 
 /* ---------- File menu ---------- */
 const fm=$("#fileMenu"),fmb=$("#fileMenuBtn");
-function menu(open){const on=open==null?fm.hidden:open;fm.hidden=!on;fmb.setAttribute("aria-expanded",on);if(on){const r=fmb.getBoundingClientRect();fm.style.left=r.left+"px";fm.style.top=(r.bottom+4)+"px";const f=fm.querySelector("button");f&&f.focus()}}
+function menu(open){const ib=$("#inboxItem");if(ib)ib.hidden=!(typeof ISOWNER!=="undefined"&&ISOWNER&&RAWDB);const on=open==null?fm.hidden:open;fm.hidden=!on;fmb.setAttribute("aria-expanded",on);if(on){const r=fmb.getBoundingClientRect();fm.style.left=r.left+"px";fm.style.top=(r.bottom+4)+"px";const f=fm.querySelector("button");f&&f.focus()}}
 fmb.addEventListener("click",e=>{e.stopPropagation();menu()});
 document.addEventListener("click",e=>{if(!fm.hidden&&!e.target.closest("#fileMenu"))menu(false)},true);
 fm.addEventListener("keydown",e=>{const b=[...fm.querySelectorAll("button")],i=b.indexOf(document.activeElement);if(e.key==="ArrowDown"){e.preventDefault();b[(i+1)%b.length].focus()}if(e.key==="ArrowUp"){e.preventDefault();b[(i-1+b.length)%b.length].focus()}if(e.key==="Escape"){menu(false);fmb.focus()}});
-fm.addEventListener("click",e=>{const b=e.target.closest("[data-fm]");if(!b)return;menu(false);fileAction(b.dataset.fm)});
+fm.addEventListener("click",e=>{const b=e.target.closest("[data-fm],[data-tourstart],[data-fb],[data-fblocal],[data-inbox]");if(!b)return;menu(false);fileAction(b.dataset.fm)});
 $("#helpBtn").addEventListener("click",()=>{state.modal="keys";E.x=null;showKeys()});
 function needProject(){if(cur())return true;toast("NO PROJECT","Create or open a project first.");return false}
-function fileAction(k){
+function fileAction(k){if(!k)return;
   if(k==="new"){state.modal="new";render()}
   else if(k==="import"){if(needProject())$("#fileIn").click()}
   else if(k==="captions"){if(needProject())srtIn.click()}

@@ -92,6 +92,13 @@ The AI features call `sample.json(prompt, {images})` and expect a JSON reply (se
 - **FCPXML:** speed changes, ramps, reverse and freeze frames are flagged in comments, not carried over.
 - **Transcripts:** they are imported, not generated in the page.
 
+## Beta testing
+
+- **Privacy:** the owner works in the shared database. Every other signed-in person who can save works in a private space (`data/users/<id>/ws/…`) that nobody else can read, the owner included. View-only visitors and signed-out visitors work on their own device. Access rules keep the shared data readable only by the owner and editors.
+- **Feedback:** the Feedback button and File › Send Feedback store reports in `feedback/<id>`. Each tester can write only their own entry, and only the owner and editors can read them all. Crashes are reported automatically, with no media. The owner reads everything in File › Feedback Inbox. People who can't save (view-only links) can copy their feedback from Help instead.
+- **First run:** a short tour runs on first use, and the page warns about browsers without WebCodecs or storage and about small screens.
+- **Claude:** the Claude tab keeps a per-project conversation. A version is saved before every AI edit, so each reply has Undo and Try again. The Scenes tab shows the storyline as editable scene cards.
+
 ## Before selling it
 
 - **Legal review:** have the app and its About text reviewed. That covers terms of use, a privacy policy, and disclosure of the AI features: Claude receives a description of the timeline and, for Create, Review and Smart Auto Cut, small preview frames.

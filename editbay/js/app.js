@@ -60,7 +60,7 @@ function mutate(id,fn,{render:doRender=true,debounce=0}={}){const i=state.projec
   clearTimeout(timers[id]);if(debounce)timers[id]=setTimeout(()=>{delete timers[id];persist(state.projects.find(q=>q.id===id))},debounce);else persist(p)}
 function addLog(pid,entry){mutate(pid,q=>{(q.log=q.log||[]).push(Object.assign({id:uid("e"),at:nowISO(),who:"joe",type:"note",stage:q.stage},entry))},{render:false})}
 
-function toast(head,body){const el=document.createElement("div");el.className="toast";el.innerHTML=`<b>${esc(head)}</b>${esc(body)}`;$("#toasts").appendChild(el);setTimeout(()=>el.remove(),7000)}
+function toast(head,body){const box=$("#toasts");const el=document.createElement("div");el.className="toast";el.setAttribute("role","status");el.innerHTML=`<b>${esc(head)}</b>${esc(body)}`;box.appendChild(el);while(box.children.length>3)box.firstChild.remove();setTimeout(()=>el.remove(),6500)}
 
 /* ---------- render shell ---------- */
 let rendering=false;
@@ -376,7 +376,7 @@ function ensureSel(){if(!state.projects.find(p=>p.id===state.sel)){const s=sorte
 let firstAct=true,firstReq=true,firstProj=true;
 function diffActivity(next){if(firstAct){firstAct=false;return}
   const prev=new Map(state.activity.map(a=>[a.id,a]));
-  next.forEach(a=>{const o=prev.get(a.id);const where=pTitle(a.projectId);
+  next.forEach(a=>{if(/in Edit Bay/.test(a.chat||""))return;const o=prev.get(a.id);const where=pTitle(a.projectId);
     if(!o){if(a.status==="working")toast("CLAUDE STARTED",(a.title||a.step||"A task")+(where?" · "+where:""));return}
     if(o.status!==a.status){if(a.status==="done")toast("CLAUDE FINISHED",(a.title||"Task")+(where?" · "+where:""));else if(a.status==="waiting")toast("CLAUDE NEEDS YOU",a.step||a.title||"");else if(a.status==="error")toast("CLAUDE STOPPED",a.step||a.title||"")}
     else if(o.step!==a.step&&a.status==="working"&&a.step)toast("CLAUDE",a.step)})}
@@ -391,6 +391,7 @@ async function boot(){
   const c=window.claude,hasC=!!(c&&typeof c.use==="function");
   if(hasC){try{db=await c.use("db")}catch(e){db=null}try{assets=await c.use("assets")}catch(e){assets=null}try{downloads=await c.use("downloads")}catch(e){downloads=null}}
   else downloads=LDOWN;
+  if(db&&typeof scopeDb==="function"){try{db=await scopeDb(db)}catch(e){db=null}}
   state.cloud=!!db;if(!db){if(IDB_OK){db=LDB;state.mode="loading"}else{state.mode="local";render();return}}
   const timer=setTimeout(()=>{if(state.mode==="loading"){state.note="Can’t reach your saved projects yet. They’ll appear when the connection answers.";render()}},10000);
   db.collection("projects").onSnapshot(snap=>{

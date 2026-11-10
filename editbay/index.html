@@ -7,7 +7,7 @@
 <meta name="description" content="Edit Bay: a browser video editor with Claude as your assistant editor.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Anton&family=Archivo:wght@500;700;800;900&family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;800&family=Space+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Anton&family=Archivo:wght@500;700;800;900&family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;800&family=Space+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/editor.css">
 <link rel="stylesheet" href="css/pro.css">
@@ -17,7 +17,7 @@
   <header class="tbar">
     <div class="brand"><span class="mark" data-ic="film"></span><b>Edit Bay</b><div class="menus"><button class="mbtn" id="fileMenuBtn" aria-haspopup="true" aria-expanded="false">File</button><button class="mbtn" id="helpBtn" title="Shortcuts and help (?)">Help</button></div></div>
     <div class="name" id="winName">Edit Bay</div>
-    <div class="tright"><span class="savechip" id="saveChip" title="Where your work is saved"></span><button class="live" id="liveBtn" title="Background Tasks (⌘9)"><span class="pulse" id="livePulse"></span><span id="liveTxt">Claude idle</span></button></div>
+    <div class="tright"><span class="beta">Beta</span><button class="mbtn fbb" id="fbBtn" title="Send feedback">Feedback</button><span class="savechip" id="saveChip" title="Where your work is saved"></span><button class="live" id="liveBtn" title="Background Tasks (⌘9)"><span class="pulse" id="livePulse"></span><span id="liveTxt">Claude idle</span></button></div>
   </header>
   <div class="top">
     <section class="pane browser-p" aria-label="Browser">
@@ -79,6 +79,11 @@
   <hr>
   <button role="menuitem" data-fm="storage">Storage &amp; Media…</button>
   <button role="menuitem" data-fm="about">About Edit Bay</button>
+  <hr>
+  <button role="menuitem" data-tourstart="1">Take the tour</button>
+  <button role="menuitem" data-fb="1">Send Feedback…</button>
+  <button role="menuitem" data-fblocal="1">Copy Feedback Saved on This Device</button>
+  <button role="menuitem" data-inbox="1" id="inboxItem" hidden>Feedback Inbox (owner)</button>
 </div>
 <div id="bgwin"></div>
 <div id="note"></div>
@@ -100,7 +105,9 @@
 <script src="js/source.js"></script>
 <script src="js/gl.js"></script>
 <script src="js/director.js"></script>
+<script src="js/chat.js"></script>
 <script src="js/polish.js"></script>
 <script src="js/suite.js"></script>
+<script src="js/beta.js"></script>
 </body>
 </html>
