@@ -211,7 +211,10 @@ function srcTime(c,t){if(c.freeze)return c.fz!=null?c.fz:c.in;const m=mediaOf(c.
   let off=c.ramp&&c.ramp.length>1?cdur(c)*rampInt(c.ramp,clamp((t-c.start)/cdur(c),0,1))+Math.min(0,t-c.start)*rampAt(c.ramp,0)+Math.max(0,t-cend(c))*rampAt(c.ramp,1):(t-c.start)*(c.speed||1);
   return clamp(c.reverse?c.out-off:c.in+off,0,Math.max(0,md-.03))}
 function sync(){const tl=E.tl;if(!tl)return;const t=viewT();
-  for(const c of tl.clips){if(c.type!=="video"&&c.type!=="audio")continue;const r=getRec(c);if(!r)continue;const el=r.el;
+  for(const c of tl.clips){if(c.type!=="video"&&c.type!=="audio")continue;
+    /* only keep players for clips near the playhead: browsers cap how many media players a page may open */
+    if(t<c.start-8||t>cend(c)+8){if(recs.has(c.id)&&(t<c.start-20||t>cend(c)+20))dropRec(c.id);continue}
+    const r=getRec(c);if(!r)continue;const el=r.el;
     const[w0,w1]=winOf(c);const active=t>=w0&&t<w1&&trackOn(c.track)&&!c.off;const target=srcTime(c,t);
     if(active){const g=(c.freeze?0:kv(c,"vol",t))*fadeAt(c,t)*audGate(c,t);if(r.gain)r.gain.gain.value=g;else el.volume=clamp(g*busGain(c.track),0,1);if(r.pan)r.pan.pan.value=clamp(c.pan||0,-1,1);
       if(E.playing&&c.reverse&&!c.freeze){/* browsers can't play backwards: step frames */if(!el.paused)el.pause();if(Math.abs(el.currentTime-target)>.9/fpsOf()&&!el.seeking)el.currentTime=target}
@@ -357,10 +360,12 @@ function edTimeline(){
   // ruler
   const steps=[.1,.2,.5,1,2,5,10,15,30,60,120,300,600];const maj=steps.find(s=>s*PPS>=84)||600;const minr=maj*PPS>=200?maj/10:maj/5;
   let rh="";const endT=(W-LEFT)/PPS;
-  for(let s=0;s<=endT;s+=minr){const isMaj=Math.abs(s/maj-Math.round(s/maj))<1e-6;rh+=`<div class="et${isMaj?"":" mi"}" style="left:${LEFT+s*PPS}px">${isMaj?`<em>${shortTC(s,maj)}</em>`:""}</div>`}
-  const mk=(tl?tl.markers||[]:[]).map(m=>`<button class="emk ${m.kind==="beat"?"beat":m.done?"done":m.by==="claude"?"claude":"joe"}" data-mk="${esc(m.id)}" style="left:${LEFT+m.t*PPS}px" title="${esc((m.by==="claude"?"Claude: ":"")+(m.text||"Marker")+" · "+tcs(m.t))}"><i></i></button>`).join("");
-  const tr=TRACKS.map(t=>{const on=trackOn(t),k=trk(t),lk=!!k.lock,au=t[0]==="A";let cl=tl?tl.clips.filter(x=>x.track===t).map(clipHTML).join(""):"";
-    if(tl&&t==="V1")cl+=v1().map(c=>{const h=trHalf(c);if(!h)return"";const nm=(TRANS.find(x=>x[0]===c.tr.type)||[0,"Transition"])[1];return`<div class="etr${E.sel.has(c.id)&&E.trSel?" sel":""}" data-tr="${esc(c.id)}" style="left:${LEFT+(c.start-h)*PPS}px;width:${Math.max(8,2*h*PPS)}px" title="${esc(nm)} · ${(2*h).toFixed(2)} s"><span>${esc(nm)}</span></div>`}).join("");
+  /* draw only what is on screen (plus a margin) so long timelines stay fast */
+  const vt0=Math.max(0,(sc.scrollLeft-LEFT-600)/PPS),vt1=(sc.scrollLeft+sc.clientWidth+600)/PPS;E._vw=[vt0,vt1,PPS];
+  for(let s=Math.floor(vt0/minr)*minr;s<=Math.min(endT,vt1);s+=minr){const isMaj=Math.abs(s/maj-Math.round(s/maj))<1e-6;rh+=`<div class="et${isMaj?"":" mi"}" style="left:${LEFT+s*PPS}px">${isMaj?`<em>${shortTC(s,maj)}</em>`:""}</div>`}
+  const mk=(tl?tl.markers||[]:[]).filter(m=>m.t>=vt0&&m.t<=vt1).map(m=>`<button class="emk ${m.kind==="beat"?"beat":m.done?"done":m.by==="claude"?"claude":"joe"}" data-mk="${esc(m.id)}" style="left:${LEFT+m.t*PPS}px" title="${esc((m.by==="claude"?"Claude: ":"")+(m.text||"Marker")+" · "+tcs(m.t))}"><i></i></button>`).join("");
+  const tr=TRACKS.map(t=>{const on=trackOn(t),k=trk(t),lk=!!k.lock,au=t[0]==="A";let cl=tl?tl.clips.filter(x=>x.track===t&&cend(x)>=vt0&&x.start<=vt1).map(clipHTML).join(""):"";
+    if(tl&&t==="V1")cl+=v1().map(c=>{const h=trHalf(c);if(!h||c.start<vt0-5||c.start>vt1+5)return"";const nm=(TRANS.find(x=>x[0]===c.tr.type)||[0,"Transition"])[1];return`<div class="etr${E.sel.has(c.id)&&E.trSel?" sel":""}" data-tr="${esc(c.id)}" style="left:${LEFT+(c.start-h)*PPS}px;width:${Math.max(8,2*h*PPS)}px" title="${esc(nm)} · ${(2*h).toFixed(2)} s"><span>${esc(nm)}</span></div>`}).join("");
     return`<div class="etrack ${t}${on?"":" off"}${lk?" lk":""}" data-track="${t}"><div class="thead"><span class="tn">${t}</span><span class="tbs"><button data-trk="${t}" class="${on?"on":""}" title="${on?"Disable":"Enable"} ${t}">${au?(on?"♪":"×"):(on?"◉":"○")}</button><button data-tlock="${t}" class="${lk?"on":""}" title="${lk?"Unlock":"Lock"} ${t}">${lk?"⊠":"⊡"}</button>${au?`<button data-tmute="${t}" class="${k.mute?"on m":""}" title="Mute ${t}">M</button><button data-tsolo="${t}" class="${k.solo?"on s":""}" title="Solo ${t}">S</button>`:""}</span></div>${cl}</div>`}).join("");
   const rg=E.rin!=null&&E.rout!=null&&E.rout>E.rin?`<div class="erange" style="left:${LEFT+E.rin*PPS}px;width:${(E.rout-E.rin)*PPS}px"></div>`:"";
   c.innerHTML=`<div class="eruler" id="eruler">${rh}${mk}${rg}</div>${tr}${rg?rg.replace('class="erange"','class="erange body"'):""}

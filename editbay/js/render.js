@@ -11,7 +11,7 @@ function readyEl(el){return new Promise(res=>{if(el.readyState>=2)return res();c
 
 /* put every visible source on the exact frame for timeline time t */
 async function prepFrame(t){E.t=t;E.skimT=null;const tl=E.tl;const waits=[];E.fo=E.fo||new Map();E.fo.clear();
-  for(const c of tl.clips){if(c.off||!trackOn(c.track))continue;const[w0,w1]=winOf(c);if(t<w0||t>=w1)continue;
+  for(const c of tl.clips){if(c.off||!trackOn(c.track)||t<c.start-8||t>cend(c)+8)continue;const[w0,w1]=winOf(c);if(t<w0||t>=w1)continue;
     if(c.type==="video"){waits.push((async()=>{const fr=await frameFor(c,t);if(fr){const d=await demux(mediaOf(c.mediaId)).catch(()=>null);E.fo.set(c.id,{frame:fr,rot:d?d.rot:0});return}
       const r=getRec(c);if(!r)return;const el=r.el;if(!el.paused)el.pause();await readyEl(el);await seekEl(el,srcTime(c,t)+.0005)})())}
     else if(c.type==="image"){const m=mediaOf(c.mediaId);if(m){const i=imgFor(m);if(!i.complete)waits.push(i.decode().catch(()=>{}))}}}

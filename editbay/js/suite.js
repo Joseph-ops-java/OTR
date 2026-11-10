@@ -40,6 +40,7 @@ function fileAction(k){if(!k)return;
   else if(k==="fcpxml"){if(needProject())exportFCPXML()}
   else if(k==="saveproj"){if(needProject())saveProjectFile()}
   else if(k==="create")openCreate();
+  else if(k==="undohist"){if(needProject()){state.modal="hist";$("#modal").dataset.k="";render()}}
   else if(k==="history"){if(needProject()){state.ttab="history";render()}}
   else if(k==="storage")openSuite("storage");
   else if(k==="about")openSuite("about")}
@@ -149,6 +150,7 @@ document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)r
 document.addEventListener("keydown",e=>{if(e.target&&e.target.id==="verName"&&e.key==="Enter"){e.preventDefault();$("#vSave").click();return}
   const mod=e.metaKey||e.ctrlKey,code=e.code||"";if(state.modal&&code!=="KeyS")return;
   if(mod&&code==="KeyS"){e.preventDefault();if(cur())openSuite("ver");return}
+  if(mod&&e.altKey&&code==="KeyZ"){e.preventDefault();e.stopImmediatePropagation();if(cur()){state.modal="hist";$("#modal").dataset.k="";render()}return}
   if(typing(e.target))return;
   if(mod&&e.altKey&&code==="KeyE"){e.preventDefault();e.stopImmediatePropagation();if(cur())exportFrame();return}
   if(mod&&code==="KeyI"){e.preventDefault();if(needProject())$("#fileIn").click();return}

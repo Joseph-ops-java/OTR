@@ -79,6 +79,9 @@ The AI features call `sample.json(prompt, {images})` and expect a JSON reply (se
 | `js/gl.js` | WebGL grading: wheels, curves, LUTs |
 | `js/director.js` | Create from a prompt |
 | `js/polish.js` | Reverse playback, typed nudges, resizable panels |
+| `js/ux.js` | Navigation, title-bar actions, collapsible Inspector, empty states, media search, export presets |
+| `js/ux2.js` | Timeline windowing on scroll, undo history, automatic backups, rebindable shortcuts |
+| `js/chat.js`, `js/beta.js` | Claude conversation and Scenes; private storage, feedback, crash reports, tour |
 | `js/suite.js` | File menu, project files, versions, EDL/FCPXML/still export, storage, welcome, About |
 | `js/vendor/mp4-muxer.js` | mp4-muxer 5.1.3 (MIT, Vanilagy) |
 | `js/vendor/mp4box.all.min.js` | mp4box.js 0.5.2 (BSD-3-Clause, GPAC) |
@@ -88,7 +91,7 @@ The AI features call `sample.json(prompt, {images})` and expect a JSON reply (se
 - **Formats:** only codecs the browser can decode open. ProRes, BRAW, R3D and MXF don't. HEVC depends on the operating system and hardware.
 - **Export output:** 8-bit H.264, with no ProRes, DNx or HDR.
 - **Export speed:** depends on the machine. Grading and encoding run on the GPU and hardware encoder where available.
-- **Not built yet:** nested or compound clips, custom keyboard shortcuts, and live multi-user conflict resolution (the last save wins).
+- **Not built yet:** nested or compound clips, and live multi-user conflict resolution (the last save wins).
 - **FCPXML:** speed changes, ramps, reverse and freeze frames are flagged in comments, not carried over.
 - **Transcripts:** they are imported, not generated in the page.
 

@@ -353,3 +353,8 @@ details.isec[open]{padding-bottom:6px}
 .app .tlrow,.app .tlrow.noix{grid-template-columns:minmax(0,1fr)}
 .media.emptyg{display:flex;align-items:center;justify-content:center}
 [hidden]{display:none!important}
+.hist li.now{background:#2f62c914}.hist li.now b{color:#9fb8ff}
+.krows{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;max-height:52vh;overflow:auto}
+.krow{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--line2);font-size:12.5px}
+.kb{min-width:34px;cursor:pointer;background:var(--well)}.kb.cap{border-color:var(--sel);color:var(--sel)}
+@media (max-width:600px){.krows{grid-template-columns:1fr}}
