@@ -15,7 +15,7 @@ const _renderBrowser=renderBrowser;
 renderBrowser=function(){const tabs=$("#btabs");if(tabs)tabs.hidden=E.page!=="edit";if(E.page==="edit")return _renderBrowser();renderPagePane()};
 const _renderMediaBrowser=renderMediaBrowser;
 renderMediaBrowser=function(){if(E.page!=="edit")return renderPagePane();_renderMediaBrowser();
-  const b=$("#bacts");if(b&&!b.querySelector("#srtBtn"))b.insertAdjacentHTML("afterbegin",`<button class="btn" id="srtBtn" title="Import captions from an .srt or .vtt file onto V3">+ Captions</button>`)};
+  const b=$("#bacts");if(b&&!b.querySelector("#srtBtn"))b.insertAdjacentHTML("afterbegin",`<button class="btn" id="srtBtn" title="Import captions from an .srt or .vtt file onto V3">Captions</button>`)};
 const _renderCards=renderCards;renderCards=function(){if(!$("#cards"))return;_renderCards()};
 const _renderLibs=renderLibs;renderLibs=function(){if(!$("#libs"))return;_renderLibs()};
 const _renderItabs=renderItabs;

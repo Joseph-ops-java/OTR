@@ -3,7 +3,7 @@
 const TRACKS=["V3","V2","V1","A1","A2","A3"];
 const VTRACKS=["V1","V2","V3"];
 const VIS=new Set(["video","image","title","gap"]);
-const LEFT=76;            // px reserved for track headers
+const LEFT=92;            // px reserved for track headers
 const MAXMB=20;
 const FILTER_OK=typeof CanvasRenderingContext2D!=="undefined"&&"filter" in CanvasRenderingContext2D.prototype;
 const FONTS=["Archivo","Anton","Bebas Neue","Barlow Condensed","Space Mono","Playfair Display","IBM Plex Mono","system-ui"];
@@ -169,7 +169,7 @@ async function importFiles(files){
     E.mediaSel=mid;renderMediaBrowser()}
 }
 function renderMediaBrowser(){
-  $("#bacts").innerHTML=`<button class="btn" data-addtitle="1" title="Add a title at the playhead (T)">+ Title</button><button class="btn blue" id="impBtn" title="Import video, audio or images">Import Media</button>`;
+  $("#bacts").innerHTML=`<button class="btn" data-addtitle="1" title="Add a title at the playhead (T)">Title</button><button class="btn blue" id="impBtn" title="Import video, audio or images (⌘I)">Import</button>`;
   let g=$("#bbody").querySelector(".media");if(!g){$("#bbody").innerHTML=`<div class="media" id="mgrid"></div>`;g=$("#mgrid")}
   const p=cur();if(!p){g.innerHTML=`<div class="mhint">Pick a project in the Projects tab.</div>`;return}
   const list=projMedia();
@@ -365,7 +365,7 @@ function edTimeline(){
   const rg=E.rin!=null&&E.rout!=null&&E.rout>E.rin?`<div class="erange" style="left:${LEFT+E.rin*PPS}px;width:${(E.rout-E.rin)*PPS}px"></div>`:"";
   c.innerHTML=`<div class="eruler" id="eruler">${rh}${mk}${rg}</div>${tr}${rg?rg.replace('class="erange"','class="erange body"'):""}
     <div class="eph" id="eph" style="left:${LEFT+E.t*PPS}px"></div><div class="eskim" id="eskim"></div><div class="snapln" id="snapln"></div><div class="bladeln" id="bladeln"></div><div class="edrop" id="edrop"></div>
-    ${!tl||!tl.clips.length?`<div class="etl-empty">${projMedia().length?"Drag media here, or select a clip in the Browser and press E to append it to the storyline.":"Import media in the Browser, then drag it here."}</div>`:""}`;
+    ${!tl||!tl.clips.length?`<div class="etl-empty"><b>${projMedia().length?"Drag clips here to start your edit":"Your timeline is empty"}</b><span>${projMedia().length?"Or select a clip in the Browser and press E to add it to the end.":"Import your footage, or let Claude build a first cut."}</span><span class="eacts"><button class="btn" data-uximport="1">Import media</button><button class="btn purple" data-create="1">Create with Claude</button></span></div>`:""}`;
   E.pps=E.pps?E.pps:null;
   $("#tlhead").innerHTML=`<span style="display:flex;gap:10px;align-items:center;min-width:0">${ttabsHTML()}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><b>${esc(p.title)}</b> · ${tl?tl.w+"×"+tl.h+" · "+tl.fps+"p · ":""}${tl?tl.clips.length:0} clips · ${tcs(dur)}${tl&&tl.updatedBy==="claude"?` · <span style="color:#cbb8ff">last edit by Claude ${esc(ago(tl.updatedAt))}</span>`:""}</span></span>
     <span class="legend"><span><i style="background:#3f62a8"></i>Video</span><span><i style="background:#6a4fb8"></i>Title</span><span><i style="background:#2f7a46"></i>Audio</span><span><i style="background:var(--claude)"></i>Claude</span><span class="mono" style="color:var(--dim)">${E.tool.toUpperCase()}${E.snap?" · SNAP":""}${E.rin!=null&&E.rout!=null?" · RANGE "+tcs(Math.max(0,E.rout-E.rin)):""}</span></span>`;
@@ -377,7 +377,7 @@ function clipHTML(c){const P=E._pps,x=LEFT+c.start*P,w=Math.max(4,cdur(c)*P-1);c
   if((c.type==="video"||c.type==="audio")&&th.wave&&m)inner+=`<div class="wf" style="background-image:url('${th.wave}');background-size:${(m.dur||cdur(c))/sp*P}px 100%;background-position:${-(c.in/sp)*P}px 0;${c.vol===0?"opacity:.25":""}"></div>`;
   const label=c.type==="title"?(String(c.text||"Title").split("\n")[0]):c.type==="gap"?"Gap":(c.name||(m&&m.name)||c.type);
   if(c.fadeIn>0)inner+=`<div class="fi" style="width:${c.fadeIn*P}px"></div>`;if(c.fadeOut>0)inner+=`<div class="fo" style="width:${c.fadeOut*P}px"></div>`;
-  const fx=[c.lead>0?"J":"",c.tail>0?"L":"",c.reverse?"REV":"",c.rampName?c.rampName.toUpperCase():"",c.xf>0?"XF":"",c.mc?"CAM "+((c.angle||0)+1):"",c.freeze?"FREEZE":"",sp!==1?sp+"×":"",(c.look?c.look.toUpperCase():(c.bri||c.con||c.sat||c.temp||c.tint||c.fade||c.vig||c.grain||c.bw||c.hue)?"CLR":""),c.vol!=null&&c.vol!==1&&c.type!=="title"&&!c.freeze&&!c.mc?Math.round(20*Math.log10(Math.max(c.vol,.001)))+"dB":"",c.kb?"KB":"",c.pan?"PAN":""].filter(Boolean).join(" ");
+  const fx=[c.lead>0?"J-cut":"",c.tail>0?"L-cut":"",c.reverse?"Reverse":"",c.rampName?(RAMPS[c.rampName]||[c.rampName])[0]:"",c.xf>0?"Crossfade":"",c.mc?"Cam "+((c.angle||0)+1):"",c.freeze?"Freeze":"",sp!==1?Math.round(sp*100)+"%":"",(c.look&&LOOKS[c.look]?LOOKS[c.look][0]:(c.bri||c.con||c.sat||c.temp||c.tint||c.fade||c.vig||c.grain||c.bw||c.hue||c.curves||c.lut||c.lgg)?"Graded":""),c.vol!=null&&c.vol>0&&c.vol!==1&&c.type!=="title"&&!c.freeze&&!c.mc?(c.vol>1?"+":"")+Math.round(20*Math.log10(Math.max(c.vol,.001)))+" dB":"",c.kb?"Push-in":"",c.pan?"Panned":""].filter(Boolean).join(" · ");
   const kts=c.kf?[...new Set(Object.values(c.kf).flat().map(k=>+k[0].toFixed(3)))]:[];inner+=kts.map(r=>`<i class="kfd" style="left:${r*P-3}px"></i>`).join("");
   return`<div class="eclip ${c.type}${sel?" sel":""}${fl?" claude-new":""}${c.off?" dis":""}${E.tool!=="select"?" t-"+E.tool:""}" data-clip="${esc(c.id)}" style="left:${x}px;width:${w}px;${bg}" title="${esc(label)} · ${tcs(c.start)} → ${tcs(cend(c))} (${tcs(cdur(c))})">
     <div class="h l"></div><span class="lbl">${esc(label)}</span>${inner}${fx?`<span class="fx">${esc(fx)}</span>`:""}${c.by==="claude"?`<span class="bylbl">C</span>`:""}<div class="h r"></div></div>`}

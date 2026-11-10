@@ -40,6 +40,7 @@ function fileAction(k){if(!k)return;
   else if(k==="fcpxml"){if(needProject())exportFCPXML()}
   else if(k==="saveproj"){if(needProject())saveProjectFile()}
   else if(k==="create")openCreate();
+  else if(k==="history"){if(needProject()){state.ttab="history";render()}}
   else if(k==="storage")openSuite("storage");
   else if(k==="about")openSuite("about")}
 function fname(s){return String(s||"Edit Bay").replace(/[^\w\- ]+/g,"").trim().replace(/\s+/g,"_")||"edit"}
