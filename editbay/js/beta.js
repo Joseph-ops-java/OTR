@@ -1,5 +1,5 @@
 /* Edit Bay — beta readiness: private per-person storage, feedback + crash reports, an owner inbox, first-run tour, browser checks. */
-const BETA="Beta 1.0";let RAWDB=null,ME=null,ISOWNER=false;
+const BETA="Beta 2";let RAWDB=null,ME=null,ISOWNER=false;
 /* Each tester gets a private space (data/users/<id>/ws/...) nobody else can read; the owner keeps the shared root.
    People who can't write the artifact's data (view-only links, signed out) work on their own device. */
 async function scopeDb(raw){RAWDB=raw;let u=null;try{u=await window.claude.use("user")}catch(e){}
@@ -13,7 +13,7 @@ function diag(){const tl=E.tl;return{version:BETA,ua:navigator.userAgent.slice(0
   storage:state.cloud?"account":"device",page:E.page,clips:tl?tl.clips.length:0,dur:tl?+tlDur().toFixed(1):0,format:tl?`${tl.w}x${tl.h}@${tl.fps}`:""}}
 async function sendFeedback(doc){const d=Object.assign({at:new Date().toISOString(),by:ME||"",owner:ISOWNER},doc);
   /* each person appends to their own feedback/<id> entry; only the owner and editors can read them all */
-  if(RAWDB&&ME){try{const ref=RAWDB.doc("feedback/"+ME);const cur0=await ref.get();const items=((cur0.exists&&cur0.data().items)||[]).concat([d]).slice(-100);await ref.set({items,updatedAt:d.at});return"sent"}catch(e){}}
+  if(RAWDB&&ME){try{const ref=RAWDB.doc("feedback/"+ME);const cur0=await ref.get();const prev=(cur0.exists&&cur0.data())||{};const items=(prev.items||[]).concat([d]).slice(-100);await ref.set(Object.assign({},prev,{items,updatedAt:d.at}));return"sent"}catch(e){}}
   try{const a=JSON.parse(localStorage.getItem(FB_LOCAL)||"[]");a.push(d);localStorage.setItem(FB_LOCAL,JSON.stringify(a.slice(-50)))}catch(e){}return"local"}
 let errCount=0,lastErr="";
 function reportError(msg,stack){msg=String(msg||"Unknown error").slice(0,300);if(msg===lastErr||errCount>8)return;lastErr=msg;errCount++;
@@ -29,13 +29,13 @@ function fbModal(){const box=$("#modal");if(box.dataset.k==="fb")return;box.data
     <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)"><input type="checkbox" id="fbDiag" checked style="width:auto"> Include technical details (browser, screen, timeline length; never your media)</label>
     <div class="acts"><button type="button" class="btn" data-sx="1">Cancel</button><button type="submit" class="btn blue">Send</button></div></form></div>`;setTimeout(()=>{const t=$("#fbText");t&&t.focus()},0)}
 async function inboxModal(){const box=$("#modal");box.dataset.k="inbox";box.innerHTML=`<div class="ov" id="ov"><div class="dlg au" role="dialog" aria-label="Feedback inbox"><h3>Feedback inbox</h3><div id="inboxBody" style="font-size:12px;color:var(--muted)">Loading…</div><div class="acts"><button type="button" class="btn" data-sx="1">Close</button></div></div></div>`;
-  let items=[];try{const s=await RAWDB.collection("feedback").get();s.docs.forEach(d=>((d.data()||{}).items||[]).forEach(x=>items.push(Object.assign({who:d.id},x))));items.sort((a,b)=>String(b.at).localeCompare(String(a.at)))}catch(e){}
+  let items=[],usage={},people=0;try{const s=await RAWDB.collection("feedback").get();s.docs.forEach(d=>{const u=(d.data()||{}).usage;if(u&&u.c){people++;Object.entries(u.c).forEach(([k,v])=>usage[k]=(usage[k]||0)+v)}});s.docs.forEach(d=>((d.data()||{}).items||[]).forEach(x=>items.push(Object.assign({who:d.id},x))));items.sort((a,b)=>String(b.at).localeCompare(String(a.at)))}catch(e){}
   const b=$("#inboxBody");if(!b)return;if(!items.length){b.textContent="No feedback yet.";return}
-  const err=items.filter(x=>x.type==="error").length;b.innerHTML=`<div style="margin-bottom:8px">${items.length} reports · ${err} crash report${err===1?"":"s"}</div><ul class="vlist">${items.map(x=>`<li style="align-items:flex-start"><span><b>${x.type==="error"?"Crash: ":""}${esc(x.kind||"")}${x.rating?" · "+["Broken","Rough","OK","Good","Great"][x.rating-1]:""}</b><small>${esc(new Date(x.at).toLocaleString())}${x.diag?" · "+esc(x.diag.ua.split(" ").slice(-2).join(" "))+" · "+esc(x.diag.storage):""}</small><div style="font-size:12px;color:var(--text);margin-top:3px;white-space:pre-wrap">${esc(x.text||x.message||"")}</div></span></li>`).join("")}</ul>`}
+  const err=items.filter(x=>x.type==="error").length;b.innerHTML=`<div style="margin-bottom:8px">${items.length} reports · ${err} crash report${err===1?"":"s"}</div>${people?`<details style="margin-bottom:8px"><summary>Usage counts from ${people} tester${people>1?"s":""}</summary><div class="mono" style="font-size:11px;line-height:1.6">${esc(Object.entries(usage).sort((a,b)=>b[1]-a[1]).map(([k,v])=>k+" "+v).join(" · "))}</div></details>`:""}<ul class="vlist">${items.map(x=>`<li style="align-items:flex-start"><span><b>${x.type==="error"?"Crash: ":""}${esc(x.kind||"")}${x.rating?" · "+["Broken","Rough","OK","Good","Great"][x.rating-1]:""}</b><small>${esc(new Date(x.at).toLocaleString())}${x.diag?" · "+esc(x.diag.ua.split(" ").slice(-2).join(" "))+" · "+esc(x.diag.storage):""}</small><div style="font-size:12px;color:var(--text);margin-top:3px;white-space:pre-wrap">${esc(x.text||x.message||"")}</div></span></li>`).join("")}</ul>`}
 const _rm5=renderModal;renderModal=function(){if(state.modal==="fb"){fbModal();return}if(state.modal==="inbox"){if($("#modal").dataset.k!=="inbox")inboxModal();return}if(["fb","inbox"].includes($("#modal").dataset.k))$("#modal").dataset.k="";_rm5()};
 document.addEventListener("submit",async e=>{if(e.target.id!=="fbForm")return;e.preventDefault();e.stopImmediatePropagation();const r=document.querySelector('input[name="fbr"]:checked');const text=$("#fbText").value.trim();if(!text){$("#fbText").focus();return}
   const res=await sendFeedback({type:"feedback",rating:r?+r.value:null,kind:$("#fbKind").value,text,diag:$("#fbDiag").checked?diag():null});state.modal=null;$("#modal").dataset.k="";render();
-  toast("THANK YOU",res==="sent"?"Your feedback was sent.":"Saved on this device. Your access doesn’t allow sending from here, so copy it from Help › Feedback saved on this device.")},true);
+  toast("THANK YOU",res==="sent"?"Your feedback was sent.":HOSTED&&CFG.feedbackUrl?"Finish sending it in the GitHub tab that just opened. A copy is also saved on this device.":"Saved on this device. Your access doesn’t allow sending from here, so copy it from Help › Feedback saved on this device.")},true);
 
 /* ---------- first-run tour ---------- */
 const TOUR=[["#bbody","Bring in your footage","Drop video, audio and photos here, any size. Double-click a clip to open it in the Source viewer and mark In and Out."],
@@ -55,6 +55,6 @@ document.addEventListener("keydown",e=>{if(tourI>=0&&$("#tour")&&e.key==="Escape
 
 /* ---------- notices: browser support, small screens ---------- */
 function notices(){const n=[];if(typeof FAST_OK!=="undefined"&&!FAST_OK)n.push("This browser can’t do fast exports. Use Chrome or Edge for frame-accurate MP4 export.");if(!IDB_OK)n.push("This browser is blocking storage, so work won’t be kept. Turn off private browsing or allow site data.");
-  if(innerWidth<900)n.push("Edit Bay works best on a laptop or desktop screen.");if(state.deviceOnly)n.push("Your work is saved privately on this device. Use File › Save Project File to back it up.");return n}
+  if(innerWidth<700)n.push("Edit Bay works best on a tablet, laptop or desktop. On a phone you can review, but editing is cramped.");if(state.deviceOnly)n.push("Your work is saved privately on this device. Use File › Save Project File to back it up.");return n}
 window.addEventListener("DOMContentLoaded",()=>{setTimeout(()=>{const n=notices();if(n.length){state.note=n.join(" ");renderNote();setTimeout(()=>{if(state.note===n.join(" ")){state.note="";renderNote()}},12000)}
   let seen=false;try{seen=localStorage.getItem("editbay.toured")==="1"}catch(e){}if(!seen&&innerWidth>=900)setTimeout(()=>{if(!state.modal)tour(0)},600)},2400)});

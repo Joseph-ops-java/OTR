@@ -1,0 +1,8 @@
+{
+  "name": "editbay-claude-proxy",
+  "private": true,
+  "type": "module",
+  "scripts": { "deploy": "wrangler deploy", "dev": "wrangler dev" },
+  "dependencies": { "@anthropic-ai/sdk": "^1.7.0" },
+  "devDependencies": { "wrangler": "^4.0.0" }
+}

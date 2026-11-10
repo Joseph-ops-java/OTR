@@ -38,7 +38,8 @@ Then open http://localhost:8080 in Chrome or Edge.
 - **Loudness:** a live K-weighted meter and integrated measurement to ITU-R BS.1770.
 
 ### Text
-- **Transcripts:** import `.srt`, `.vtt`, or word-level JSON (Whisper, AssemblyAI, Deepgram).
+- **Transcripts:** make them in the browser with Whisper (nothing is uploaded), or import `.srt`, `.vtt`, or word-level JSON (Whisper, AssemblyAI, Deepgram).
+- **Auto captions:** speech on the timeline becomes captions on V3, with line length set by the frame shape.
 - **Editing by text:** cut by deleting words or lines, and remove filler words.
 - **Claude can cut by what people say,** using the transcript.
 
@@ -54,25 +55,38 @@ Then open http://localhost:8080 in Chrome or Edge.
 - **Playback proxies:** an optional constant-frame-rate playback proxy for heavy footage. Exports still use the original.
 - **Cloud proxies** for syncing.
 
+## Host it for testers (no Claude account needed)
+
+Edit Bay is a static site. Any static host works, including GitHub Pages:
+
+1. In the repository, open **Settings → Pages**, choose **Deploy from a branch**, then `main` and `/ (root)`.
+2. After a minute the editor is at `https://joseph-ops-java.github.io/OTR/editbay/`.
+
+The hosted copy is an installable web app: Chrome and Edge show **Install app**, and it opens offline after the first visit. Hosted copies keep projects and media in each tester's browser (IndexedDB). Everything works except Claude's features, which are off unless you run the proxy in `server/` and put its URL in `config.js`. Feedback from hosted testers opens a prefilled GitHub issue (`feedbackUrl` in `config.js`).
+
+See `BETA2.md` for what's left before Beta 2.
+
 ## Where it runs
 
 | | On claude.ai (as an Artifact) | Self-hosted |
 |---|---|---|
 | Editing, colour, audio, export, interchange | Yes | Yes |
 | Projects and media | Your account (projects, files up to 20 MB) plus this device | This device (IndexedDB) |
-| Claude: Create, Assist, Review, Smart Auto Cut | Yes | Needs a backend (see below) |
+| Claude: Create, Assist, Review, Smart Auto Cut | Yes | Off, or on through your own proxy (`server/`) |
 | Saving files | claude.ai download prompt | Normal browser downloads |
 
 The app asks for platform features with `window.claude.use(name)`. When that returns nothing, it falls back to `LDB` (IndexedDB database), `LBLOB` (device media) and `LDOWN` (downloads) in `js/store.js`.
 
 ### Adding Claude to a self-hosted copy
 
-The AI features call `sample.json(prompt, {images})` and expect a JSON reply (see `runAssist` in `js/pro.js`, `claudePick` in `js/auto.js` and `runCreate` in `js/director.js`). To enable them, provide a `window.claude.use("sample")` shim that forwards those calls to your own server. That server calls the Anthropic Messages API with your API key. Never put an API key in the browser.
+Deploy the Cloudflare Worker in `server/` (see `server/README.md`) and set `claudeProxy` in `config.js` to its URL. `js/hosted.js` then sends the AI requests there, and the worker calls the Claude API with your key. Never put an API key in the browser.
 
 ## Files
 
 | File | What it does |
 |---|---|
+| `config.js`, `js/hosted.js` | Hosted settings (feedback link, optional Claude proxy); hosted-mode Claude and feedback |
+| `server/` | Optional Cloudflare Worker that forwards Claude requests with your API key |
 | `js/icons.js`, `js/store.js` | Icons; device storage (IndexedDB database, media, downloads) |
 | `js/app.js` | Projects, inspector tabs, history, live data |
 | `js/editor.js` | Timeline model, compositor, trimming tools, clip inspector, export dialog |
@@ -89,6 +103,11 @@ The AI features call `sample.json(prompt, {images})` and expect a JSON reply (se
 | `js/fixes.js` | Preview quality, keyframes for colour/crop/effects, overlay in/out transitions, extra tracks, complete Paste Attributes, LUTs in project files |
 | `js/ux.js` | Navigation, title-bar actions, collapsible Inspector, empty states, media search, export presets |
 | `js/ux3.js` | Command search, right-click menus, track control icons, recent projects, export preset preselection |
+| `js/beta2.js` | Sample project, footage error messages, match timeline to first clip, keyframe easing, storage warnings, opt-in usage counts, browser check, tablet drawer |
+| `js/captions.js` | Captions and transcripts made in the browser (Whisper via Transformers.js) |
+| `manifest.webmanifest`, `sw.js`, `icons/` | Installable web app and offline support |
+| `privacy.html`, `terms.html` | Privacy and terms pages |
+| `sample/` | Real Dark Out material for the sample project |
 | `js/ux2.js` | Timeline windowing on scroll, undo history, automatic backups, rebindable shortcuts |
 | `js/chat.js`, `js/beta.js` | Claude conversation and Scenes; private storage, feedback, crash reports, tour |
 | `js/suite.js` | File menu, project files, versions, EDL/FCPXML/still export, storage, welcome, About |
@@ -102,7 +121,6 @@ The AI features call `sample.json(prompt, {images})` and expect a JSON reply (se
 - **Export speed:** depends on the machine. Grading and encoding run on the GPU and hardware encoder where available.
 - **Not built yet:** nested or compound clips, and live multi-user conflict resolution (the last save wins).
 - **FCPXML:** speed changes, ramps, reverse and freeze frames are flagged in comments, not carried over.
-- **Transcripts:** they are imported, not generated in the page.
 
 ## Beta testing
 

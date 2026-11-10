@@ -414,3 +414,43 @@ body.picking #pgm{cursor:crosshair}
 @media (max-width:1280px){.cmdb span,.cmdb kbd{display:none}}
 
 .xpre~div[style*="font-size:12.5px"]{display:none}
+/* ---------- Beta 2 ---------- */
+.matchbar{position:absolute;left:10px;right:10px;top:10px;z-index:5;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-radius:8px;background:#26262bf2;border:1px solid #3d3d44;font-size:12px;color:#e6e6ea;box-shadow:0 8px 24px #0007}
+.matchbar span{flex:1;min-width:180px}
+.stage-area{position:relative}
+.welcome .legal{margin-top:10px;font-size:11.5px;color:var(--dim);display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
+.welcome .legal a,.lnk{color:#9db8f5;text-decoration:none;background:none;border:0;padding:0;font:inherit;cursor:pointer}
+.welcome .legal a:hover,.lnk:hover{text-decoration:underline}
+.menu a.mlink{display:flex;justify-content:space-between;padding:6px 12px;color:inherit;text-decoration:none;font-size:12.5px;border-radius:5px}
+.menu a.mlink:hover,.menu a.mlink:focus-visible{background:#3a6fd8;color:#fff;outline:none}
+.syslist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow:auto}
+.syslist li{display:grid;grid-template-columns:20px 1fr;gap:2px 8px;font-size:12.5px;padding:6px 8px;border-radius:6px;background:#202023}
+.syslist li span{grid-row:span 2;font-weight:700;text-align:center}
+.syslist li.y span{color:#5fd38a}.syslist li.n span{color:#ff6b6b}.syslist li.w span{color:#e0a040}
+.syslist small{grid-column:2;color:var(--muted);font-size:11.5px;line-height:1.45}
+.usageask{position:fixed;right:16px;bottom:48px;z-index:8000;width:min(340px,calc(100vw - 32px));background:#252528;border:1px solid #3d3d44;border-radius:10px;padding:12px 14px;box-shadow:0 16px 40px #000a;font-size:12.5px;color:#e6e6ea}
+.usageask p{margin:6px 0 10px;color:var(--muted);line-height:1.5}.usageask div{display:flex;gap:6px;justify-content:flex-end}
+.sb{height:6px;border-radius:3px;background:#2e2e33;overflow:hidden;margin:6px 0}.sb i{display:block;height:100%;background:#7a5cc6;transition:width .3s}
+.drawerbtn{display:none}
+/* tablets in portrait (and small laptops): viewer and inspector side by side, Media slides out */
+@media (max-width:1100px) and (min-width:701px){
+  body{overflow:hidden}
+  .app{height:100%;grid-template-rows:36px minmax(0,52fr) auto minmax(0,48fr) auto!important}
+  .top{grid-template-columns:minmax(0,1fr) minmax(260px,300px)!important}
+  .top .pane{min-height:0}
+  .top .browser-p{position:fixed;z-index:60;left:0;top:36px;bottom:0;width:min(420px,88vw);transform:translateX(-102%);transition:transform .2s ease;box-shadow:8px 0 32px #000a;background:var(--pane);grid-column:auto}
+  .app.drawer .browser-p{transform:none}
+  .drawerbtn{display:inline-flex}
+  .tlrow{min-height:0}.tlmain{min-height:0}
+  .tbar .name{display:none}.tbar{grid-template-columns:auto 1fr}
+  .tools{grid-template-columns:auto 1fr auto;height:auto;min-height:42px;padding:4px 8px;gap:6px}.tools .dash{display:none}
+  .transport{gap:4px;padding:0 6px}
+}
+/* touch: bigger targets */
+@media (pointer:coarse){
+  .ib,.tbtn2,.btn,.mbtn,.seg button,.btabs button,.itabs button,.pages button{min-height:34px}
+  .thead .tbs button{min-width:28px;min-height:28px}
+  .eclip .th,.eclip .trim,.eclip [data-edge]{min-width:14px}
+  .ctx button{padding:10px 12px}
+  input[type=range]{min-height:28px}
+}

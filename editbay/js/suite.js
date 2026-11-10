@@ -1,6 +1,6 @@
 /* Edit Bay — product shell: File menu, project files (.editbay), versions, EDL + still export, storage manager with cloud proxies,
    relinking of offline media, save status, welcome screen and About. */
-const APP_VERSION="Beta 1.0";
+const APP_VERSION="Beta 2";
 document.querySelectorAll("[data-ic]").forEach(el=>el.insertAdjacentHTML("afterbegin",ic(el.dataset.ic)));
 
 /* ---------- save status ---------- */

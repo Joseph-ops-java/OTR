@@ -1,0 +1,10 @@
+/* Edit Bay — service worker: makes the hosted app installable and lets it open offline.
+   Same-origin files: network first (testers always get the latest beta), cache as the offline fallback.
+   Google Fonts: cache first. Everything else (Claude proxy, caption model, blobs) passes straight through. */
+const CACHE="editbay-beta2-1";
+const SHELL=["./", "config.js", "css/base.css", "css/editor.css", "css/pro.css", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon.svg", "icons/maskable-512.png", "index.html", "js/app.js", "js/audio.js", "js/auto.js", "js/beta.js", "js/beta2.js", "js/captions.js", "js/chat.js", "js/director.js", "js/editor.js", "js/fixes.js", "js/frames.js", "js/fx.js", "js/gl.js", "js/hosted.js", "js/icons.js", "js/polish.js", "js/pro.js", "js/render.js", "js/source.js", "js/store.js", "js/suite.js", "js/ux.js", "js/ux2.js", "js/ux3.js", "js/vendor/mp4-muxer.js", "js/vendor/mp4box.all.min.js", "legal.css", "manifest.webmanifest", "privacy.html", "sample/dark-out-flyer.jpg", "sample/dj-samszy.jpg", "sample/otr-logo.png", "terms.html"];
+self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
+self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith("editbay-")&&k!==CACHE&&k!=="editbay-fonts").map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener("fetch",e=>{const r=e.request;if(r.method!=="GET"||r.headers.has("range"))return;const u=new URL(r.url);
+  if(u.origin===location.origin){e.respondWith(fetch(r).then(res=>{if(res.ok&&res.type==="basic"){const cp=res.clone();caches.open(CACHE).then(c=>c.put(r,cp))}return res}).catch(()=>caches.match(r,{ignoreSearch:true}).then(m=>m||(r.mode==="navigate"?caches.match("./"):Response.error()))));return}
+  if(u.host==="fonts.googleapis.com"||u.host==="fonts.gstatic.com"){e.respondWith(caches.open("editbay-fonts").then(c=>c.match(r).then(m=>m||fetch(r).then(res=>{if(res.ok||res.type==="opaque")c.put(r,res.clone());return res}))))}});
