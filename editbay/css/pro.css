@@ -470,3 +470,32 @@ body.picking #pgm{cursor:crosshair}
 #sh-claude .dlg{max-height:90vh;overflow:auto}
 #aiFields .aichk{display:flex!important;grid-template-columns:none!important;gap:8px;align-items:center;justify-content:flex-start;text-align:left}
 #aiFields .aichk input{width:auto!important;margin:0;flex:none}
+/* ---------- phones: one column, viewer first, Media in a drawer, nothing wider than the screen ---------- */
+@media (max-width:700px){
+  html,body{overflow-x:hidden;max-width:100vw}
+  .app{grid-template-rows:auto auto auto auto auto!important;height:auto;min-height:100%}
+  .tbar{display:flex!important;gap:6px;padding:0 8px;height:44px;min-width:0}
+  .tbar .brand{flex:none;gap:6px}.tbar .brand b,.tbar .name,.tbar .beta,.savechip,#liveTxt,.tbar .fbb{display:none!important}
+  .tbar .menus .mbtn{padding:4px 6px}
+  .tright{margin-left:auto;min-width:0;display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.tright::-webkit-scrollbar{display:none}
+  .topacts{gap:4px}.topacts .tbtn2{padding:0 9px;min-width:36px;justify-content:center}.topacts .tbtn2 span,.topacts .tbtn2 kbd{display:none}
+  .top{display:flex!important;flex-direction:column}
+  .top .pane{min-height:0}.top .pane.viewer{order:-1;min-height:0;flex:none}
+  .top .pane.viewer #vArea{min-height:54vh}
+  .top .pane:not(.viewer):not(.browser-p){max-height:75vh;overflow:auto}
+  .top .browser-p{position:fixed;z-index:60;left:0;top:44px;bottom:0;width:min(420px,92vw);transform:translateX(-102%);transition:transform .2s ease;box-shadow:8px 0 32px #000a;background:var(--pane)}
+  .app.drawer .browser-p{transform:none}.drawerbtn{display:inline-flex!important}
+  .welcome{padding:20px 16px}.welcome h2{font-size:22px}.welcome .wacts{flex-wrap:wrap;justify-content:center;gap:8px;width:100%}
+  .welcome .wacts .btn{flex:1 1 calc(50% - 8px);min-width:140px;min-height:40px}
+  .tlrow{min-height:340px}.tlmain{min-height:320px}
+  .transport{flex-wrap:wrap;height:auto;padding:4px 8px;gap:4px}
+  .pages{flex-wrap:wrap;height:auto;padding:4px;gap:2px}.pages .ptools{position:static;flex-wrap:wrap}
+  .usageask{left:16px;right:16px;bottom:16px;width:auto}
+  .dlg{max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);overflow:auto}
+  .ctx{max-width:calc(100vw - 16px)}
+}
+/* contrast: secondary button text and empty-state text pass WCAG AA (4.5:1) */
+.btn{color:#d4d4da}.btn:disabled{color:#8a8a92}
+.tlnone,.etl-empty span{color:#a2a2aa}
+#installBtn{min-width:44px;min-height:30px}
+.pages .hint{color:#8f8f97}
