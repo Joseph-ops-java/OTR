@@ -5,7 +5,7 @@ E.asLog=[];E.scope="wave";E.grade=null;
 
 /* ---------- pages ---------- */
 const PAGES=[["edit","edit","Edit"],["color","color","Color"],["audio","audio","Audio"],["deliver","deliver","Deliver"]];
-function renderPagebar(){const b=$("#pagebar");if(!b)return;b.innerHTML=PAGES.map(([k,i,l],n)=>`<button data-page="${k}" aria-pressed="${E.page===k}" title="${l} page (⌘${n+1})">${ic(i)}${l}</button>`).join("")+`<span class="ptools"><button class="ai" id="autoBtn" title="Auto Cut: cut your clips to the music, with Claude choosing the story">${ic("auto")}Auto Cut</button><button id="mcBtn" title="New multicam clip from 2–4 camera angles">${ic("multicam")}Multicam</button><button id="angBtn" title="Show or hide the angle viewer">${ic("angles")}Angles</button><button id="silBtn" title="Remove pauses from clips with dialogue">${ic("pauses")}Pauses</button></span><span class="hint">Press ? for shortcuts</span>`}
+function renderPagebar(){const b=$("#pagebar");if(!b)return;b.innerHTML=PAGES.map(([k,i,l],n)=>`<button data-page="${k}" aria-pressed="${E.page===k}" title="${l} page (⌘${n+1})">${ic(i)}${l}</button>`).join("")+`<span class="ptools"><button class="ai" id="createBtn" title="Create a video from a prompt: Claude writes the script and builds the edit from your footage">${ic("film")}Create</button><button class="ai" id="autoBtn" title="Auto Cut: cut your clips to the music, with Claude choosing the story">${ic("auto")}Auto Cut</button><button id="mcBtn" title="New multicam clip from 2–4 camera angles">${ic("multicam")}Multicam</button><button id="angBtn" title="Show or hide the angle viewer">${ic("angles")}Angles</button><button id="silBtn" title="Remove pauses from clips with dialogue">${ic("pauses")}Pauses</button></span><span class="hint">Press ? for shortcuts</span>`}
 function setPage(p){if(!PAGES.find(x=>x[0]===p))return;E.page=p;
   if(p==="color"&&E.tl&&!selClips().some(c=>c.type==="video"||c.type==="image")){const c=E.tl.clips.filter(c=>(c.type==="video"||c.type==="image")&&E.t>=c.start&&E.t<cend(c)).sort((a,b)=>a.track==="V1"?-1:1)[0]||E.tl.clips.find(c=>c.type==="video"||c.type==="image");if(c)E.sel=new Set([c.id])}
   if(p==="edit"&&state.itab==="color")state.itab="info";
@@ -15,13 +15,13 @@ const _renderBrowser=renderBrowser;
 renderBrowser=function(){const tabs=$("#btabs");if(tabs)tabs.hidden=E.page!=="edit";if(E.page==="edit")return _renderBrowser();renderPagePane()};
 const _renderMediaBrowser=renderMediaBrowser;
 renderMediaBrowser=function(){if(E.page!=="edit")return renderPagePane();_renderMediaBrowser();
-  const b=$("#bacts");if(b&&!b.querySelector("#srtBtn"))b.insertAdjacentHTML("afterbegin",`<button class="btn" id="srtBtn" title="Import captions from an .srt or .vtt file onto V3">+ Captions</button>`)};
+  const b=$("#bacts");if(b&&!b.querySelector("#srtBtn"))b.insertAdjacentHTML("afterbegin",`<button class="btn" id="srtBtn" title="Import captions from an .srt or .vtt file onto V3">Captions</button>`)};
 const _renderCards=renderCards;renderCards=function(){if(!$("#cards"))return;_renderCards()};
 const _renderLibs=renderLibs;renderLibs=function(){if(!$("#libs"))return;_renderLibs()};
 const _renderItabs=renderItabs;
 renderItabs=function(){if(E.page==="color"){$("#itabs").innerHTML=`<button aria-pressed="true">Color</button>`;return}_renderItabs()};
 const _renderInsp=renderInsp;
-renderInsp=function(){if(E.page==="color")return renderColorPage();_renderInsp();if(state.itab==="claude"&&cur())assistPanel()};
+renderInsp=function(){const box=$("#insp");box.classList.toggle("chatmode",E.page!=="color"&&state.itab==="claude"&&!!cur());if(E.page==="color")return renderColorPage();_renderInsp();if(state.itab==="claude"&&cur())assistPanel()};
 function renderPagePane(){const p=cur(),body=$("#bbody");if(!p){body.innerHTML=`<div class="empty">Pick a project first.</div>`;return}
   if(E.page==="color")return scopesPane(body);if(E.page==="audio")return mixerPane(body);if(E.page==="deliver")return deliverPane(body)}
 
@@ -80,7 +80,7 @@ function bindBal(){const b=$("#bal");if(!b)return;let snap=null;
 /* ---------- audio page: mixer, meters, ducking ---------- */
 const lin2db=v=>v>0?20*Math.log10(v):-Infinity,db2lin=d=>d<=-60?0:Math.pow(10,d/20);
 function mixerPane(body){$("#bacts").innerHTML=`<button class="btn" data-duck="1" title="Lower A2 music wherever A1 dialogue plays">Duck music under dialogue</button>`;
-  const strips=["V1","V2","A1","A2","A3"].map(tr=>{const t=trk(tr),g=t.gain==null?1:t.gain;return`<div class="strip2"><span class="nm">${tr}</span><div class="fz"><canvas data-meter="${tr}" width="12" height="160"></canvas><input type="range" min="-60" max="12" step=".5" value="${Math.max(-60,lin2db(g)).toFixed(1)}" data-mxg="${tr}" aria-label="${tr} level"></div><span class="db" id="mxdb-${tr}">${g>0?lin2db(g).toFixed(1):"−∞"} dB</span><span class="ms"><button data-mxm="${tr}" class="${t.mute?"m":""}" title="Mute">M</button><button data-mxs="${tr}" class="${t.solo?"s":""}" title="Solo">S</button></span></div>`}).join("");
+  const strips=TRACKS.filter(t=>t[0]==="A"||t==="V1"||t==="V2").map(tr=>{const t=trk(tr),g=t.gain==null?1:t.gain;return`<div class="strip2"><span class="nm">${tr}</span><div class="fz"><canvas data-meter="${tr}" width="12" height="160"></canvas><input type="range" min="-60" max="12" step=".5" value="${Math.max(-60,lin2db(g)).toFixed(1)}" data-mxg="${tr}" aria-label="${tr} level"></div><span class="db" id="mxdb-${tr}">${g>0?lin2db(g).toFixed(1):"−∞"} dB</span><span class="ms"><button data-mxm="${tr}" class="${t.mute?"m":""}" title="Mute">M</button><button data-mxs="${tr}" class="${t.solo?"s":""}" title="Solo">S</button></span></div>`}).join("");
   const mg=E.tl&&E.tl.master!=null?E.tl.master:1;
   body.innerHTML=`<div class="mixer"><div class="strips">${strips}<div class="strip2 mst"><span class="nm">MAIN</span><div class="fz"><canvas data-meter="MAIN" width="12" height="160"></canvas><input type="range" min="-60" max="12" step=".5" value="${Math.max(-60,lin2db(mg)).toFixed(1)}" data-mxg="MAIN" aria-label="Main level"></div><span class="db" id="mxdb-MAIN">${lin2db(mg).toFixed(1)} dB</span><span class="db" id="rms">RMS —</span></div></div>
     <div class="mixfoot"><small>${AC?"Meters show peak dBFS while the cut plays.":"Press play once to start the meters."} Aim for dialogue peaks around −6 dB and music 15 dB under it.</small><button class="btn sm" data-clrbeats="1">Clear beat markers</button></div></div>`}
@@ -156,7 +156,7 @@ function tlSummary(){const tl=E.tl,r3=v=>+(+v).toFixed(3);
       if(c.mediaId){o.media=c.mediaId;o.in=r3(c.in);o.out=r3(c.out)}if(c.name)o.name=c.name;if(c.text)o.text=c.text;["speed","vol","op","scale","x","y","rot","fadeIn","fadeOut","look","off","style","pan","bri","con","sat","temp","tint"].forEach(k=>{if(c[k]!=null&&c[k]!==0&&!(k==="speed"&&c[k]===1)&&!(k==="vol"&&c[k]===1)&&!(k==="op"&&c[k]===1)&&!(k==="scale"&&c[k]===1))o[k]=c[k]});
       if(c.tr)o.transitionIn=c.tr;if(c.kf)o.keyframes=Object.keys(c.kf);return o}),
     markers:(tl.markers||[]).filter(m=>m.kind!=="beat").map(m=>({t:r3(m.t),text:m.text,by:m.by})),beats:(tl.markers||[]).filter(m=>m.kind==="beat").map(m=>r3(m.t)).slice(0,200),
-    media:projMedia().slice(0,80).map(m=>({id:m.id,name:m.name,kind:m.kind,dur:r3(m.dur||0),w:m.w,h:m.h}))}}
+    transcript:typeof txUnits==="function"?txUnits().slice(0,700).map(u=>[r3(u.a),r3(u.b),u.t]):[],media:projMedia().slice(0,80).map(m=>({id:m.id,name:m.name,kind:m.kind,dur:r3(m.dur||0),w:m.w,h:m.h}))}}
 const ASSIST_RULES=`You are the editor inside Edit Bay, a video editor. You change the timeline by returning operations. The person's editing rules: tell a story (beginning, middle, end), draw the metaphor literally, set up then pay off, every graphic must say something, real over invented (never make up names, dates, venues or facts that are not in the timeline or request), make it feel like a movie (pacing, grade, letterbox, sound), and hook the audience in the first seconds.
 Timeline model: V1 is the magnetic storyline (no gaps; clips pack left to right; order is by start). V2 and V3 sit above V1 (overlays, titles; V3 is captions). A1–A3 are audio. Times are seconds. A clip shows from start for dur; in/out are source seconds.
 Reply with ONLY JSON: {"say":"one or two plain sentences on what you changed and why","ops":[...]}. Use [] when nothing should change. Operations, applied in order:
@@ -167,12 +167,15 @@ Reply with ONLY JSON: {"say":"one or two plain sentences on what you changed and
 {"op":"move","id":ID,"track":"V2","start":s} or for V1 reordering {"op":"move","id":ID,"index":n}
 {"op":"add_media","media":MEDIA_ID,"track":"V1|V2|V3|A1|A2|A3","at":s,"in":s,"out":s,"as":"name"}
 {"op":"add_title","text":"...","at":s,"dur":s,"track":"V2","style":"basic|lower|bold|caption|cinema|neon|mono","set":{...},"as":"name"}
-{"op":"transition","id":ID,"type":"dissolve|black|white|push|slide|wipe|zoom|whip|flash|none","d":0.5} — on a V1 clip, blends from the clip before it.
+{"op":"transition","id":ID,"type":"dissolve|black|white|push|slide|wipe|zoom|whip|flash|iris|clock|blurx|spin|glitch|burn|pushup|pushdown|doors|blinds|zoomout|none","d":0.5}
+{"op":"effect","id":ID,"type":"blur|glow|rgb|pixel|vhs|shake|pulse|leak|mirror|invert|key","amount":0..1,"color":"#00ff00 (key only)"} — amount 0 removes it.
+{"op":"frame","id":ID,"set":{"cropL":0..0.48,"cropR","cropT","cropB","bdr":corner 0..1,"bdw":border 0..0.03,"shd":shadow 0..1,"bdc":"#fff","flipH":bool,"flipV":bool,"blend":"screen|multiply|overlay|lighter|soft-light"}} — picture-in-picture framing. — on a V1 clip, blends from the clip before it.
 {"op":"look","id":ID,"look":"teal|noir|film|night|bleach|matte|vivid|red|none"}
 {"op":"kf","id":ID,"prop":"scale|x|y|rot|op|vol","t":secondsFromClipStart,"v":value}
 {"op":"marker","t":s,"text":"note"}
 {"op":"timeline","set":{"bars":2.39|2|1.85|0,"bg":"#000000"}}
 {"op":"track","track":"A2","set":{"gain":0.5,"mute":false,"solo":false}}
+{"op":"cut_range","from":s,"to":s} — ripple-delete that stretch of the storyline (use the transcript's timeline times to cut by what people say).
 Only reference ids and media ids that exist. Keep changes focused on the request.`;
 async function getSample(){if(sampleNS)return sampleNS;try{sampleNS=window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(e){sampleNS=null}
   if(sampleNS)sampleCaps=await sampleNS.limits().catch(()=>null);return sampleNS}
@@ -194,12 +197,13 @@ function applyOps(ops,alias){const tl=E.tl,done=[],skipped=[];const fix=v=>typeo
       case"move":{if(!c)throw 0;if(o.index!=null&&c.track==="V1"){const l=v1().filter(x=>x.id!==c.id);l.splice(clamp(o.index|0,0,l.length),0,c);repack(l)}else{if(o.track&&okTrack(c,o.track))c.track=o.track;if(fix(o.start)&&c.track!=="V1")c.start=Math.max(0,o.start);relink(c)}done.push("move");break}
       case"add_media":{const m=mediaOf(o.media);if(!m)throw 0;const tr=TRACKS.includes(o.track)?o.track:(m.kind==="audio"?"A1":"V1");const n=newClip(m,okTrack({type:m.kind},tr)?tr:(m.kind==="audio"?"A1":"V2"),fix(o.at)?o.at:tlDur());n.by="claude";
         if(fix(o.in))n.in=Math.max(0,o.in);if(fix(o.out)&&o.out>n.in)n.out=o.out;if(n.track==="V1"){const l=v1();const b=boundaryNear(fix(o.at)?o.at:tlDur());l.splice(b.i,0,n);tl.clips.push(n);repack(l)}else{tl.clips.push(n);relink(n)}if(o.as)alias[o.as]=n.id;done.push("add_media");break}
-      case"add_title":{const n=newTitle(fix(o.at)?o.at:E.t);n.by="claude";n.text=String(o.text||"Title");if(o.style&&TPRESETS[o.style])Object.assign(n,clone(TPRESETS[o.style]));if(o.track&&["V2","V3"].includes(o.track))n.track=o.track;if(fix(o.dur))n.out=n.in+Math.max(.2,o.dur);Object.assign(n,o.set||{});tl.clips.push(n);relink(n);if(o.as)alias[o.as]=n.id;done.push("add_title");break}
-      case"transition":{if(!c||c.track!=="V1")throw 0;if(!o.type||o.type==="none")delete c.tr;else if(TRANS.find(x=>x[0]===o.type))c.tr={type:o.type,d:clamp(fix(o.d)?o.d:.5,.1,3)};else throw 0;done.push("transition");break}
+      case"add_title":{const n=newTitle(fix(o.at)?o.at:E.t);n.by="claude";n.text=String(o.text||"Title");if(o.style&&TPRESETS[o.style])Object.assign(n,clone(TPRESETS[o.style]));if(o.track&&VTRACKS.includes(o.track)&&o.track!=="V1")n.track=o.track;if(fix(o.dur))n.out=n.in+Math.max(.2,o.dur);Object.assign(n,o.set||{});tl.clips.push(n);relink(n);if(o.as)alias[o.as]=n.id;done.push("add_title");break}
+      case"transition":{if(!c)throw 0;if(c.track!=="V1"){if(!o.type||o.type==="none"){delete c.trIn;delete c.trOut}else{const w=o.which==="out"?"trOut":"trIn";c[w]={type:o.type==="black"||o.type==="white"?"dissolve":o.type,d:clamp(fix(o.d)?o.d:.5,.1,3)}}done.push("transition");break}if(!o.type||o.type==="none")delete c.tr;else if(TRANS.find(x=>x[0]===o.type))c.tr={type:o.type,d:clamp(fix(o.d)?o.d:.5,.1,3)};else throw 0;done.push("transition");break}
       case"look":{if(!c||!LOOKS[o.look])throw 0;Object.assign(c,clone(LOOKS[o.look][1]));if(o.look==="none")delete c.look;else c.look=o.look;done.push("look");break}
       case"kf":{if(!c||!KF_PROPS.includes(o.prop)||!fix(o.t)||!fix(o.v))throw 0;setKf(c,o.prop,c.start+o.t,o.v);done.push("keyframe");break}
       case"marker":{if(!fix(o.t))throw 0;(tl.markers=tl.markers||[]).push({id:uid("mk"),t:clamp(o.t,0,tlDur()),text:String(o.text||""),by:"claude"});done.push("marker");break}
       case"timeline":{const s=o.set||{};if(fix(s.bars))tl.bars=s.bars;if(typeof s.bg==="string")tl.bg=s.bg;done.push("timeline");break}
+      case"cut_range":{if(!fix(o.from)||!fix(o.to)||o.to<=o.from)throw 0;cutRangesRaw(tl,[[o.from,o.to]]);done.push("cut");break}
       case"track":{if(!TRACKS.includes(o.track))throw 0;tl.tracks[o.track]=Object.assign(tl.tracks[o.track]||{},o.set||{});done.push("track");break}
       default:throw 0}}catch(e){skipped.push(o&&o.op||"?")}}
   return{done,skipped}}
@@ -231,8 +235,8 @@ document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)r
   if(d.scope){E.scope=d.scope;scopesPane($("#bbody"));return}
   if(d.lookbtn){const k=d.lookbtn,L=LOOKS[k];edit(()=>selClips().filter(c=>c.type==="video"||c.type==="image").forEach(c=>{Object.assign(c,clone(L[1]));if(k==="none")delete c.look;else c.look=k}));$("#insp").dataset.k="";renderColorPage();return}
   if(d.balreset){edit(()=>selClips().forEach(c=>{c.temp=0;c.tint=0}));renderColorPage(true);return}
-  if(d.gcopy){const c=selClips()[0];if(c){E.grade=Object.fromEntries(GRADE_KEYS.map(k=>[k,c[k]]));toast("GRADE COPIED",c.name||"Clip");$("#insp").dataset.k="";renderColorPage()}return}
-  if(d.gpaste&&E.grade){edit(()=>selClips().filter(c=>c.type==="video"||c.type==="image").forEach(c=>GRADE_KEYS.forEach(k=>{if(E.grade[k]==null)delete c[k];else c[k]=E.grade[k]})));renderColorPage(true);return}
+  if(d.gcopy){const c=selClips()[0];if(c){E.grade=Object.fromEntries(GRADE_KEYS.map(k=>[k,clone(c[k])]));toast("GRADE COPIED",c.name||"Clip");$("#insp").dataset.k="";renderColorPage()}return}
+  if(d.gpaste&&E.grade){edit(()=>selClips().filter(c=>c.type==="video"||c.type==="image").forEach(c=>GRADE_KEYS.forEach(k=>{if(E.grade[k]==null)delete c[k];else c[k]=clone(E.grade[k])})));renderColorPage(true);return}
   if(d.gall){const c=selClips()[0];if(!c)return;const g=Object.fromEntries(GRADE_KEYS.map(k=>[k,c[k]]));edit(tl=>tl.clips.filter(x=>x.type==="video"||x.type==="image").forEach(x=>GRADE_KEYS.forEach(k=>{if(g[k]==null)delete x[k];else x[k]=g[k]})));toast("GRADE MATCHED","Every video and image clip now uses this grade.");return}
   if(t.id==="cmpBtn2"){E.compare=!E.compare;requestDraw();$("#insp").dataset.k="";renderColorPage();const b=$("#cmpBtn");if(b)b.classList.toggle("on",E.compare);return}
   if(d.mxm||d.mxs){const tr=d.mxm||d.mxs;edit(tl=>{tl.tracks[tr]=tl.tracks[tr]||{};if(d.mxm)tl.tracks[tr].mute=!tl.tracks[tr].mute;else tl.tracks[tr].solo=!tl.tracks[tr].solo});applyBuses();mixerPane($("#bbody"));meterLoop();return}

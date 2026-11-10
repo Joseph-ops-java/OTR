@@ -60,7 +60,7 @@ function mutate(id,fn,{render:doRender=true,debounce=0}={}){const i=state.projec
   clearTimeout(timers[id]);if(debounce)timers[id]=setTimeout(()=>{delete timers[id];persist(state.projects.find(q=>q.id===id))},debounce);else persist(p)}
 function addLog(pid,entry){mutate(pid,q=>{(q.log=q.log||[]).push(Object.assign({id:uid("e"),at:nowISO(),who:"joe",type:"note",stage:q.stage},entry))},{render:false})}
 
-function toast(head,body){const el=document.createElement("div");el.className="toast";el.innerHTML=`<b>${esc(head)}</b>${esc(body)}`;$("#toasts").appendChild(el);setTimeout(()=>el.remove(),7000)}
+function toast(head,body){const box=$("#toasts");const el=document.createElement("div");el.className="toast";el.setAttribute("role","status");el.innerHTML=`<b>${esc(head)}</b>${esc(body)}`;box.appendChild(el);while(box.children.length>2)box.firstChild.remove();setTimeout(()=>el.remove(),4500)}
 
 /* ---------- render shell ---------- */
 let rendering=false;
@@ -150,7 +150,7 @@ function updRTransport(){const v=$("#rvid");if(!v)return;const d=v.duration||0;
 function renderItabs(){const p=cur();const open=p?reqsFor(p.id).filter(r=>r.status!=="done").length:0;const hasSel=edHasSelection();
   if(state.itab==="clip"&&!hasSel)state.itab="info";
   const t=(k,l,n)=>`<button data-itab="${k}" aria-pressed="${state.itab===k}">${l}${n?`<span class="n">${n}</span>`:""}</button>`;
-  $("#itabs").innerHTML=(hasSel?t("clip","Clip"):"")+t("info","Info")+t("check","Checklist")+t("claude","Claude",open)}
+  $("#itabs").innerHTML=(hasSel?t("clip","Clip"):"")+t("info","Project")+t("claude","Claude",open)}
 function renderInsp(){
   const p=cur(),box=$("#insp");
   if(!p){box.innerHTML=`<div class="empty">Nothing selected.</div>`;box.dataset.k="";return}
@@ -173,8 +173,11 @@ function renderInsp(){
   const fmts=["16:9","9:16","1:1","4:5"];
   const r=(lab,id,inner)=>`<div class="prow"><label for="${id}">${lab}</label>${inner}</div>`;
   const pipe=STAGES.map(([k,l],i)=>`<option value="${k}" ${k===p.stage?"selected":""}>${pad(i+1)} ${l}</option>`).join("");
+  const ck=(p.checklist||[]),ckd=ck.filter(c=>c.done).length;
   box.innerHTML=head+`<div class="grp"><span>Project</span></div>
-    ${r("Title","f-title",`<input id="f-title" data-f="title" value="${esc(p.title)}">`)}
+    ${r("Name","f-title",`<input id="f-title" data-f="title" value="${esc(p.title)}">`)}
+    <div class="grp"><span>Timeline</span></div>${edSettingsRows()}
+    <details class="pdet"><summary>Project details <small>client, stage, schedule, checklist ${ckd}/${ck.length}</small></summary>
     ${r("Client","f-client",`<input id="f-client" data-f="client" value="${esc(p.client)}">`)}
     ${r("Type","f-kind",`<select id="f-kind" data-f="kind">${KINDS.map(k=>`<option ${k===p.kind?"selected":""}>${k}</option>`).join("")}</select>`)}
     ${r("Stage","f-stage",`<select id="f-stage" data-f="stage">${pipe}</select>`)}
@@ -182,13 +185,13 @@ function renderInsp(){
     <div class="prow"><label>Aspect</label><div class="fmts">${fmts.map(f=>`<label><input type="checkbox" data-fmt="${f}" ${(p.formats||[]).includes(f)?"checked":""}>${f}</label>`).join("")}</div></div>
     ${r("Frame rate","f-fps",`<select id="f-fps" data-f="fps">${["23.976","24","25","30","50","60"].map(v=>`<option ${String(p.fps)===v?"selected":""}>${v}</option>`).join("")}</select>`)}
     ${r("Length","f-length",`<input id="f-length" data-f="length" value="${esc(p.length)}" placeholder="~18 s + end card">`)}
-    <div class="grp"><span>Timeline</span></div>${edSettingsRows()}
     <div class="grp"><span>Schedule</span></div>
     ${r("Start","f-start",`<input type="date" id="f-start" data-f="start" value="${esc(p.start||"")}">`)}
     ${r("Due","f-due",`<input type="date" id="f-due" data-f="due" value="${esc(p.due||"")}">`)}
     <div class="grp"><span>Files &amp; notes</span></div>
     ${r("Folder","f-folder",`<input id="f-folder" data-f="folder" class="mono" style="font-size:11.5px" value="${esc(p.folder)}" placeholder="Project folder or link">`)}
     ${r("Notes","f-notes",`<textarea id="f-notes" data-f="notes">${esc(p.notes)}</textarea>`)}
+    <div class="grp"><span>Checklist</span><span class="mono">${ckd}/${ck.length}</span></div><ul class="chk">${ck.map((c,i)=>`<li class="${c.done?"on":""}"><input type="checkbox" id="chk-${i}" data-chk="${i}" ${c.done?"checked":""}><label for="chk-${i}">${esc(c.t)}</label></li>`).join("")}</ul></details>
     <div class="danger">${state.confirmDel?`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:12px">Delete this project, its timeline and log?</span><button class="btn red" id="delYes">Delete</button><button class="btn" id="delNo">Keep</button></div>`:`<button class="btn red" id="delAsk">Delete Project</button>`}</div>`;
 }
 function reqItems(p){const rs=reqsFor(p.id);if(!rs.length)return`<li><span class="tx" style="color:var(--muted)">No requests yet.</span></li>`;
@@ -242,7 +245,7 @@ function rulerHTML(lo,days,ppd){let h="";const step=ppd<45?7:ppd<70?2:1;
     h+=`<div class="tk" style="left:${x}px">${i%step===0?`<em>${d.toLocaleDateString("en-IE",{weekday:"short"}).slice(0,3)} ${d.getDate()} ${d.toLocaleDateString("en-IE",{month:"short"})}</em>`:""}</div>`;
     if(ppd>=140)for(let q=1;q<4;q++)h+=`<div class="tk h" style="left:${x+q*ppd/4}px"></div>`;}
   return h}
-function ttabsHTML(){return`<span class="ttabs"><button data-ttab="edit" aria-pressed="${state.ttab==="edit"}">Timeline</button><button data-ttab="history" aria-pressed="${state.ttab==="history"}">Project history</button></span>`}
+function ttabsHTML(){return state.ttab==="history"?`<span class="ttabs"><button data-ttab="edit" aria-pressed="false">← Back to timeline</button><button aria-pressed="true">Project history</button></span>`:""}
 function renderHistory(){
   const sc=$("#tlscroll"),c=$("#tlc"),now=new Date();c.className="tlc";
   const p=cur();if(!p){$("#tlhead").innerHTML=ttabsHTML();c.innerHTML="";c.style.width="";return}
@@ -281,12 +284,12 @@ function renderHistory(){
 function renderModal(){
   if(!state.modal){$("#modal").innerHTML="";$("#modal").dataset.k="";return}
   if(state.modal==="new"){if($("#modal").dataset.k==="new")return;$("#modal").dataset.k="new";
-  $("#modal").innerHTML=`<div class="ov" id="ov"><form class="dlg" id="newForm" aria-label="New project"><h3>New Project</h3>
-    <div class="f"><label for="n-title">Project name</label><input id="n-title" required placeholder="e.g. Spring campaign · 30 s"></div>
-    <div class="two"><div class="f"><label for="n-client">Client / brand</label><input id="n-client"></div><div class="f"><label for="n-kind">Type</label><select id="n-kind">${KINDS.map(k=>`<option>${k}</option>`).join("")}</select></div></div>
-    <div class="two"><div class="f"><label for="n-fmt">Timeline format</label><select id="n-fmt"><option value="1080x1920">Vertical 1080×1920</option><option value="1920x1080">Horizontal 1920×1080</option><option value="1080x1080">Square 1080×1080</option><option value="1080x1350">Portrait 1080×1350</option></select></div><div class="f"><label for="n-fps">Frame rate</label><select id="n-fps"><option>24</option><option>25</option><option selected>30</option><option>60</option></select></div></div>
-    <div class="two"><div class="f"><label for="n-start">Start</label><input type="date" id="n-start" value="${ymd(new Date())}"></div><div class="f"><label for="n-due">Due</label><input type="date" id="n-due"></div></div>
-    <div class="acts"><button type="button" class="btn" id="nCancel">Cancel</button><button class="btn blue" type="submit">OK</button></div></form></div>`;
+  $("#modal").innerHTML=`<div class="ov" id="ov"><form class="dlg np" id="newForm" aria-label="New project"><h3>New project</h3>
+    <div class="f"><label for="n-title">Name</label><input id="n-title" required placeholder="e.g. Summer launch teaser" autocomplete="off"></div>
+    <div class="f"><label>Shape</label><div class="shapes" role="radiogroup" aria-label="Video shape">${[["1080x1920","Vertical","TikTok · Reels · Shorts",9,16],["1920x1080","Widescreen","YouTube · web",16,9],["1080x1080","Square","Feed posts",1,1],["1080x1350","Portrait","Instagram feed",4,5]].map(([v,n,d,w,h],i)=>`<label class="shape"><input type="radio" name="n-shape" value="${v}" ${i===0?"checked":""}><span class="sh" style="aspect-ratio:${w}/${h}"></span><b>${n}</b><small>${d}</small></label>`).join("")}</div></div>
+    <details class="more"><summary>More options</summary><div class="two"><div class="f"><label for="n-fps">Frame rate</label><select id="n-fps"><option>24</option><option>25</option><option selected>30</option><option>60</option></select></div><div class="f"><label for="n-kind">Type</label><select id="n-kind">${KINDS.map(k=>`<option>${k}</option>`).join("")}</select></div></div>
+      <div class="two"><div class="f"><label for="n-client">Client or brand</label><input id="n-client"></div><div class="f"><label for="n-due">Due</label><input type="date" id="n-due"></div></div><input type="hidden" id="n-start" value="${ymd(new Date())}"><select id="n-fmt" hidden><option value="1080x1920">v</option><option value="1920x1080">h</option><option value="1080x1080">s</option><option value="1080x1350">p</option></select></details>
+    <div class="acts"><button type="button" class="btn" id="nCancel">Cancel</button><button class="btn blue" type="submit">Create project</button></div></form></div>`;
   setTimeout(()=>{const t=$("#n-title");if(t)t.focus()},0);return}
   if(state.modal==="keys")return;
   edModal();
@@ -341,7 +344,7 @@ document.addEventListener("submit",e=>{e.preventDefault();const f=e.target;const
     mutate(p.id,q=>{(q.log=q.log||[]).push({id:uid("e"),at:nowISO(),who,type:"note",stage:q.stage,text:txt,ver:ver||undefined})})}
   else if(f.id==="reqForm"){const t=$("#reqText").value.trim();if(!t)return;const useCtx=$("#reqCtx")&&$("#reqCtx").checked;$("#reqText").value="";sendReq(t,useCtx?edSelectionContext():null);toast("SENT TO CLAUDE","Open a chat in this Project and Claude will pick it up.")}
   else if(f.id==="chkForm"){const v=$("#chkNew").value.trim();if(!p||!v)return;$("#chkNew").value="";$("#insp").dataset.k="";mutate(p.id,q=>{(q.checklist=q.checklist||[]).push({t:v,done:false})})}
-  else if(f.id==="newForm"){const title=$("#n-title").value.trim();if(!title)return;const kind=$("#n-kind").value,spec=kind==="Commercial";
+  else if(f.id==="newForm"){const title=$("#n-title").value.trim();if(!title)return;const sh=document.querySelector('input[name="n-shape"]:checked');if(sh)$("#n-fmt").value=sh.value;const kind=$("#n-kind").value,spec=kind==="Commercial";
     const[w,h]=$("#n-fmt").value.split("x").map(Number),fps=$("#n-fps").value;
     const fm=w>h?"16:9":w===h?"1:1":h/w>1.5?"9:16":"4:5";
     const np={id:uid("p"),title,client:$("#n-client").value.trim(),kind,stage:"brief",formats:spec?["16:9","9:16"]:[fm],fps,length:"",start:$("#n-start").value||ymd(new Date()),due:$("#n-due").value||"",folder:"",notes:"",
@@ -376,7 +379,7 @@ function ensureSel(){if(!state.projects.find(p=>p.id===state.sel)){const s=sorte
 let firstAct=true,firstReq=true,firstProj=true;
 function diffActivity(next){if(firstAct){firstAct=false;return}
   const prev=new Map(state.activity.map(a=>[a.id,a]));
-  next.forEach(a=>{const o=prev.get(a.id);const where=pTitle(a.projectId);
+  next.forEach(a=>{if(/in Edit Bay/.test(a.chat||""))return;const o=prev.get(a.id);const where=pTitle(a.projectId);
     if(!o){if(a.status==="working")toast("CLAUDE STARTED",(a.title||a.step||"A task")+(where?" · "+where:""));return}
     if(o.status!==a.status){if(a.status==="done")toast("CLAUDE FINISHED",(a.title||"Task")+(where?" · "+where:""));else if(a.status==="waiting")toast("CLAUDE NEEDS YOU",a.step||a.title||"");else if(a.status==="error")toast("CLAUDE STOPPED",a.step||a.title||"")}
     else if(o.step!==a.step&&a.status==="working"&&a.step)toast("CLAUDE",a.step)})}
@@ -391,6 +394,7 @@ async function boot(){
   const c=window.claude,hasC=!!(c&&typeof c.use==="function");
   if(hasC){try{db=await c.use("db")}catch(e){db=null}try{assets=await c.use("assets")}catch(e){assets=null}try{downloads=await c.use("downloads")}catch(e){downloads=null}}
   else downloads=LDOWN;
+  if(db&&typeof scopeDb==="function"){try{db=await scopeDb(db)}catch(e){db=null}}
   state.cloud=!!db;if(!db){if(IDB_OK){db=LDB;state.mode="loading"}else{state.mode="local";render();return}}
   const timer=setTimeout(()=>{if(state.mode==="loading"){state.note="Can’t reach your saved projects yet. They’ll appear when the connection answers.";render()}},10000);
   db.collection("projects").onSnapshot(snap=>{
