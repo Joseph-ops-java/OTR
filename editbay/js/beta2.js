@@ -46,7 +46,7 @@ async function makeSample(){if(E.sampleBusy)return;E.sampleBusy=true;try{
   catch(e){toast("SAMPLE PROJECT","Couldn’t load the sample media ("+(e.message||"error")+").")}finally{E.sampleBusy=false}}
 document.addEventListener("click",e=>{if(e.target.closest("[data-sample]"))makeSample()});
 const _rvS=renderViewer;renderViewer=function(){_rvS();const w=$("#vArea .welcome");if(!w||w.querySelector("[data-sample]"))return;const a=w.querySelector(".wacts");if(a)a.insertAdjacentHTML("beforeend",`<button class="btn" data-sample="1" title="Open a short teaser built from real Dark Out material">Try with sample media</button>`);
-  const sm=w.querySelector("small");if(sm&&!w.querySelector(".legal"))sm.insertAdjacentHTML("afterend",`<div class="legal"><a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · <button class="lnk" data-syscheck="1">Check this browser</button></div>`)};
+  const sm=w.querySelector("small");if(sm&&!w.querySelector(".legal"))sm.insertAdjacentHTML("afterend",`<div class="legal"><a href="testers.html" target="_blank" rel="noopener">Tester guide</a> · <a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a> · <button class="lnk" data-syscheck="1">Check this browser</button></div>`)};
 
 /* ---------- 4. keyframe easing ---------- */
 const EASE={smooth:"Smooth (ease in and out)",lin:"Linear",in:"Ease in (start slow)",out:"Ease out (end slow)",hold:"Hold (jump at the keyframe)"};
@@ -109,14 +109,14 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-syscheck]")){e.
 
 /* ---------- 8. Help additions: privacy, terms, usage counts, system check, sample ---------- */
 (function(){const fm=$("#fileMenu");if(!fm||fm.querySelector("[data-syscheck]"))return;const about=fm.querySelector('[data-fm="about"]');
-  about.insertAdjacentHTML("afterend",`<button role="menuitem" data-syscheck="1">Check This Browser…</button><button role="menuitem" data-sample="1">Open Sample Project</button><button role="menuitem" data-usagetoggle="1" id="usageItem">Usage Counts…</button><a role="menuitem" class="mlink" href="privacy.html" target="_blank" rel="noopener">Privacy</a><a role="menuitem" class="mlink" href="terms.html" target="_blank" rel="noopener">Terms of Use</a>`)})();
+  about.insertAdjacentHTML("afterend",`<button role="menuitem" data-syscheck="1">Check This Browser…</button><button role="menuitem" data-sample="1">Open Sample Project</button><button role="menuitem" data-usagetoggle="1" id="usageItem">Usage Counts…</button><a role="menuitem" class="mlink" href="testers.html" target="_blank" rel="noopener">Tester Guide</a><a role="menuitem" class="mlink" href="privacy.html" target="_blank" rel="noopener">Privacy</a><a role="menuitem" class="mlink" href="terms.html" target="_blank" rel="noopener">Terms of Use</a>`)})();
 document.addEventListener("click",e=>{if(!e.target.closest("[data-usagetoggle]"))return;const on=usageOpt()==="yes";
   sheet("sh-usage",`<h3>Usage counts</h3><p style="font-size:12.5px;line-height:1.55;color:var(--muted)">When on, Edit Bay counts which tools you use and whether exports succeed, and sends the totals with your feedback. It never sends media, file names, titles or anything you type.</p><p style="font-size:12px" class="mono">${esc(usageSummary()||"Nothing counted yet.")}</p><div class="acts"><button class="btn" data-shclose="1">Close</button><button class="btn ${on?"":"blue"}" data-uopt="${on?"no":"yes"}" data-shclose="1">${on?"Turn off":"Turn on"}</button></div>`,"Usage counts")});
 
 /* ---------- 9. tablet: Media as a slide-out drawer in portrait ---------- */
 (function(){const t=$(".tright");if(t&&!$("#drawerBtn"))t.insertAdjacentHTML("afterbegin",`<button class="tbtn2 drawerbtn" id="drawerBtn" aria-expanded="false" aria-controls="bbody" title="Show or hide the Media browser">Media</button>`)})();
 document.addEventListener("click",e=>{const b=e.target.closest("#drawerBtn");if(b){const on=!$(".app").classList.contains("drawer");$(".app").classList.toggle("drawer",on);b.setAttribute("aria-expanded",on);return}
-  if($(".app").classList.contains("drawer")&&!e.target.closest(".browser-p")&&!e.target.closest(".ctx,.ov")&&matchMedia("(max-width:1100px) and (min-width:701px)").matches){$(".app").classList.remove("drawer");const d=$("#drawerBtn");if(d)d.setAttribute("aria-expanded","false")}});
+  if($(".app").classList.contains("drawer")&&!e.target.closest(".browser-p")&&!e.target.closest(".ctx,.ov")&&matchMedia("(max-width:1100px)").matches){$(".app").classList.remove("drawer");const d=$("#drawerBtn");if(d)d.setAttribute("aria-expanded","false")}});
 
 /* ---------- 10. hosted copies: AI Settings (free on-device model, Gemini free key, OpenRouter/Groq/Ollama, or Claude) ---------- */
 if(HOSTED&&!CFG.claudeProxy){
@@ -136,6 +136,11 @@ if(HOSTED&&!CFG.claudeProxy){
     const a=$("#assist");if(a&&aiConf().p!=="claude"){a.setAttribute("aria-label","AI");const t=$("#asText");if(t&&/Claude/.test(t.placeholder))t.placeholder=t.placeholder.replace(/Claude/g,"the AI")}
     if(aiConf().p==="claude")return;
     /* swap the word in visible text only (never ids, data or user content such as clip names) */
-    ["#assist .hello","#tlc .etl-empty","#bgLbl"].forEach(sel=>document.querySelectorAll(sel).forEach(el=>{const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode()))if(/\bClaude\b/.test(n.nodeValue)&&!n.parentElement.closest(".turn,.msg,.ccard"))n.nodeValue=n.nodeValue.replace(/Edit with Claude/g,"Edit with AI").replace(/Tell Claude/g,"Tell the AI").replace(/\bClaude\b/g,"AI")}))};
+    ["#assist .hello","#tlc .etl-empty","#bgLbl","#vArea .welcome"].forEach(sel=>document.querySelectorAll(sel).forEach(el=>{const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode()))if(/\bClaude\b/.test(n.nodeValue)&&!n.parentElement.closest(".turn,.msg,.ccard"))n.nodeValue=n.nodeValue.replace(/Edit with Claude/g,"Edit with AI").replace(/Tell Claude/g,"Tell the AI").replace(/\bClaude\b/g,"AI")}))};
   const _rnL=render;render=function(){_rnL();relabel()};const _apL=assistPanel;assistPanel=function(){_apL();relabel()};
 }
+
+/* ---------- accessibility: every file picker gets a name screen readers can announce ---------- */
+(function(){const names={".srt":"Import captions",".cube":"Import a LUT",".editbay":"Open a project file","video/*":"Import media"};
+  const label=()=>document.querySelectorAll('input[type=file]:not([aria-label])').forEach(i=>{const a=i.accept||"";const k=Object.keys(names).find(x=>a.includes(x));i.setAttribute("aria-label",k?names[k]:(a.includes(".json")?"Import a transcript":"Choose a file"))});
+  label();setTimeout(label,1000);new MutationObserver(label).observe(document.body,{childList:true})})();

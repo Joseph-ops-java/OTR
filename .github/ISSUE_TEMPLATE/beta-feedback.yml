@@ -1,0 +1,32 @@
+name: Edit Bay beta feedback
+description: Something broke, confused you, or could be better in the Edit Bay beta
+title: "[Beta 2] "
+labels: ["beta-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for testing Edit Bay. Never attach footage you don't have the rights to share.
+  - type: dropdown
+    id: about
+    attributes:
+      label: What is this about?
+      options: ["Something broke", "Confusing", "Idea", "AI edits", "Exports", "Import or footage", "Other"]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What were you trying to do, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: e.g. Chrome 140 on a MacBook Air, Safari on iPad
+  - type: dropdown
+    id: rating
+    attributes:
+      label: How was it overall?
+      options: ["Great", "Good", "OK", "Rough", "Broken"]
