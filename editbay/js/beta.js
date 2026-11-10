@@ -35,7 +35,7 @@ async function inboxModal(){const box=$("#modal");box.dataset.k="inbox";box.inne
 const _rm5=renderModal;renderModal=function(){if(state.modal==="fb"){fbModal();return}if(state.modal==="inbox"){if($("#modal").dataset.k!=="inbox")inboxModal();return}if(["fb","inbox"].includes($("#modal").dataset.k))$("#modal").dataset.k="";_rm5()};
 document.addEventListener("submit",async e=>{if(e.target.id!=="fbForm")return;e.preventDefault();e.stopImmediatePropagation();const r=document.querySelector('input[name="fbr"]:checked');const text=$("#fbText").value.trim();if(!text){$("#fbText").focus();return}
   const res=await sendFeedback({type:"feedback",rating:r?+r.value:null,kind:$("#fbKind").value,text,diag:$("#fbDiag").checked?diag():null});state.modal=null;$("#modal").dataset.k="";render();
-  toast("THANK YOU",res==="sent"?"Your feedback was sent.":"Saved on this device. Your access doesn’t allow sending from here, so copy it from Help › Feedback saved on this device.")},true);
+  toast("THANK YOU",res==="sent"?"Your feedback was sent.":HOSTED&&CFG.feedbackUrl?"Finish sending it in the GitHub tab that just opened. A copy is also saved on this device.":"Saved on this device. Your access doesn’t allow sending from here, so copy it from Help › Feedback saved on this device.")},true);
 
 /* ---------- first-run tour ---------- */
 const TOUR=[["#bbody","Bring in your footage","Drop video, audio and photos here, any size. Double-click a clip to open it in the Source viewer and mark In and Out."],

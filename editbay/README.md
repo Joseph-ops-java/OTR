@@ -54,25 +54,38 @@ Then open http://localhost:8080 in Chrome or Edge.
 - **Playback proxies:** an optional constant-frame-rate playback proxy for heavy footage. Exports still use the original.
 - **Cloud proxies** for syncing.
 
+## Host it for testers (no Claude account needed)
+
+Edit Bay is a static site. Any static host works, including GitHub Pages:
+
+1. In the repository, open **Settings → Pages**, choose **Deploy from a branch**, then `main` and `/ (root)`.
+2. After a minute the editor is at `https://joseph-ops-java.github.io/OTR/editbay/`.
+
+Hosted copies keep projects and media in each tester's browser (IndexedDB). Everything works except Claude's features, which are off unless you run the proxy in `server/` and put its URL in `config.js`. Feedback from hosted testers opens a prefilled GitHub issue (`feedbackUrl` in `config.js`).
+
+See `BETA2.md` for what's left before Beta 2.
+
 ## Where it runs
 
 | | On claude.ai (as an Artifact) | Self-hosted |
 |---|---|---|
 | Editing, colour, audio, export, interchange | Yes | Yes |
 | Projects and media | Your account (projects, files up to 20 MB) plus this device | This device (IndexedDB) |
-| Claude: Create, Assist, Review, Smart Auto Cut | Yes | Needs a backend (see below) |
+| Claude: Create, Assist, Review, Smart Auto Cut | Yes | Off, or on through your own proxy (`server/`) |
 | Saving files | claude.ai download prompt | Normal browser downloads |
 
 The app asks for platform features with `window.claude.use(name)`. When that returns nothing, it falls back to `LDB` (IndexedDB database), `LBLOB` (device media) and `LDOWN` (downloads) in `js/store.js`.
 
 ### Adding Claude to a self-hosted copy
 
-The AI features call `sample.json(prompt, {images})` and expect a JSON reply (see `runAssist` in `js/pro.js`, `claudePick` in `js/auto.js` and `runCreate` in `js/director.js`). To enable them, provide a `window.claude.use("sample")` shim that forwards those calls to your own server. That server calls the Anthropic Messages API with your API key. Never put an API key in the browser.
+Deploy the Cloudflare Worker in `server/` (see `server/README.md`) and set `claudeProxy` in `config.js` to its URL. `js/hosted.js` then sends the AI requests there, and the worker calls the Claude API with your key. Never put an API key in the browser.
 
 ## Files
 
 | File | What it does |
 |---|---|
+| `config.js`, `js/hosted.js` | Hosted settings (feedback link, optional Claude proxy); hosted-mode Claude and feedback |
+| `server/` | Optional Cloudflare Worker that forwards Claude requests with your API key |
 | `js/icons.js`, `js/store.js` | Icons; device storage (IndexedDB database, media, downloads) |
 | `js/app.js` | Projects, inspector tabs, history, live data |
 | `js/editor.js` | Timeline model, compositor, trimming tools, clip inspector, export dialog |
