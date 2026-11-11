@@ -39,7 +39,8 @@ Then open http://localhost:8080 in Chrome or Edge.
 
 ### Text
 - **Transcripts:** make them in the browser with Whisper (nothing is uploaded), or import `.srt`, `.vtt`, or word-level JSON (Whisper, AssemblyAI, Deepgram).
-- **Auto captions:** speech on the timeline becomes captions on V3, with line length set by the frame shape.
+- **Auto captions:** speech on the timeline becomes captions on V3, with line length set by the frame shape. The AI then corrects misheard names, spelling and punctuation using the project's own facts. On claude.ai the speech model loads from files published with the app; the hosted site uses the larger model from Hugging Face and falls back to the built-in one.
+- **Score & sound:** original background music that follows the cut and drops on the reveal (tempo, key and chords planned by the AI or by Edit Bay, synthesised in the browser), and whooshes, risers and impacts on transitions and titles. Generated audio is a temporary bed until the real mix is dropped in.
 - **Editing by text:** cut by deleting words or lines, and remove filler words.
 - **Claude can cut by what people say,** using the transcript.
 
@@ -115,7 +116,12 @@ Deploy the Cloudflare Worker in `server/` (see `server/README.md`) and set `clau
 | `js/ux.js` | Navigation, title-bar actions, collapsible Inspector, empty states, media search, export presets |
 | `js/ux3.js` | Command search, right-click menus, track control icons, recent projects, export preset preselection |
 | `js/beta2.js` | Sample project, footage error messages, match timeline to first clip, keyframe easing, storage warnings, opt-in usage counts, browser check, tablet drawer |
-| `js/captions.js` | Captions and transcripts made in the browser (Whisper via Transformers.js) |
+| `js/captions.js` | Captions and transcripts made in the browser (Whisper via Transformers.js), plus an AI clean-up of names and punctuation |
+| `js/score.js` | Score & sound: original background music planned from the edit (by the AI or Edit Bay) and synthesised in the browser, plus sound effects on transitions and titles |
+| `js/voice.js` | Voiceover from text: Kokoro (Apache-2.0) speaks a script onto the timeline; the AI can write the script from facts on screen |
+| `js/studio.js` | A description of the sound for the AI (levels, speech spans, silences, beats, problems), ducking by real speech, Finish my video, Score window controls, find and replace in captions |
+| `models/fetch-voice.sh` | Downloads and splits the voice model for claude.ai (not kept in git) |
+| `models/` | The built-in speech model (Whisper tiny, half-precision encoder and 8-bit decoder) and ONNX Runtime binary, split into pieces under 15 MB so claude.ai can serve them |
 | `manifest.webmanifest`, `sw.js`, `icons/` | Installable web app and offline support |
 | `privacy.html`, `terms.html` | Privacy and terms pages |
 | `sample/` | Real Dark Out material for the sample project |

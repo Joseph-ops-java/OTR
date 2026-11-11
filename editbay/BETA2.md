@@ -16,6 +16,9 @@ Beta 1 was tested on claude.ai by people who had the link. For Beta 2, anyone wi
 - [x] **Captions in the browser:** **Auto captions** (Media panel) and **Transcribe** (Text tab).
   - Whisper runs on the device through Transformers.js. The model downloads once (77 MB, or 110 MB on GPUs with half precision) and then works offline.
   - Captions fit the frame: short lines on vertical video, and a sentence's last word stays on its line.
+- [x] **Captions on claude.ai:** the speech model ships with the app (`models/`, in pieces under 15 MB), so Auto captions works where outside downloads are blocked. An AI pass corrects misheard names and punctuation.
+- [x] **Score & sound:** original music planned from the edit and synthesised in the browser, with a drop on the reveal, plus sound design on transitions and titles.
+- [ ] **AI music model:** MusicGen's weights are licensed CC-BY-NC 4.0 (non-commercial), so it was not added. Options: a licensed music API with the tester's own key, or real tracks.
 - [x] **Opt-in usage counts:** tool use, export success and failure, page visits. No media or text.
   - Asked once, after the tester has used the app for a while; changeable in Help.
   - The owner sees the totals in the Feedback Inbox.

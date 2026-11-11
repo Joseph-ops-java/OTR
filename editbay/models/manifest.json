@@ -1,0 +1,47 @@
+{
+ "model": "whisper-tiny",
+ "source": "onnx-community/whisper-tiny_timestamped (OpenAI Whisper, Apache-2.0/MIT)",
+ "ort": "onnxruntime-web 1.22.0-dev.20250409-89f8206ba4 (MIT)",
+ "split": {
+  "kokoro/onnx/model_quantized.onnx": [
+   "kokoro/onnx/model_quantized.onnx.part0.wasm",
+   "kokoro/onnx/model_quantized.onnx.part1.wasm",
+   "kokoro/onnx/model_quantized.onnx.part2.wasm",
+   "kokoro/onnx/model_quantized.onnx.part3.wasm",
+   "kokoro/onnx/model_quantized.onnx.part4.wasm",
+   "kokoro/onnx/model_quantized.onnx.part5.wasm",
+   "kokoro/onnx/model_quantized.onnx.part6.wasm"
+  ],
+  "kokoro/voices/af_bella.bin": [
+   "kokoro/voices/af_bella.bin.part0.wasm"
+  ],
+  "kokoro/voices/af_heart.bin": [
+   "kokoro/voices/af_heart.bin.part0.wasm"
+  ],
+  "kokoro/voices/am_michael.bin": [
+   "kokoro/voices/am_michael.bin.part0.wasm"
+  ],
+  "kokoro/voices/bm_george.bin": [
+   "kokoro/voices/bm_george.bin.part0.wasm"
+  ],
+  "ort/ort-wasm-simd-threaded.jsep.wasm": [
+   "ort/ort-wasm-simd-threaded.jsep.wasm.part0.wasm",
+   "ort/ort-wasm-simd-threaded.jsep.wasm.part1.wasm"
+  ],
+  "whisper-tiny/onnx/decoder_model_merged_quantized.onnx": [
+   "whisper-tiny/onnx/decoder_model_merged_quantized.onnx.part0.wasm",
+   "whisper-tiny/onnx/decoder_model_merged_quantized.onnx.part1.wasm",
+   "whisper-tiny/onnx/decoder_model_merged_quantized.onnx.part2.wasm"
+  ],
+  "whisper-tiny/onnx/encoder_model_fp16.onnx": [
+   "whisper-tiny/onnx/encoder_model_fp16.onnx.part0.wasm",
+   "whisper-tiny/onnx/encoder_model_fp16.onnx.part1.wasm"
+  ]
+ },
+ "dtype": {
+  "encoder_model": "fp16",
+  "decoder_model_merged": "q8"
+ },
+ "note": "Pieces end in .wasm so every host (including claude.ai) serves them; they are plain byte slices joined in order.",
+ "voice": "onnx-community/Kokoro-82M-v1.0-ONNX (Apache-2.0), 8-bit"
+}

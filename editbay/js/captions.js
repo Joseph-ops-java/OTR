@@ -1,15 +1,32 @@
 /* Edit Bay — captions made in the browser. Whisper (via Transformers.js) turns a clip's speech into a word-level
    transcript on this device; nothing is uploaded. The transcript then drives text editing, filler removal and captions. */
+/* models/ holds the speech and voice models and the ONNX Runtime binary, split into pieces under 15 MB (claude.ai's file
+   limit). This points Transformers.js at them and joins the pieces as they are asked for. */
+let BUNDLED=null;
+async function bundledModels(T,onProgress){if(BUNDLED)return BUNDLED;const base=new URL("models/",location.href).href;const man=await (await fetch(base+"manifest.json")).json();
+  const joined=async rel=>{const parts=man.split[rel];if(!parts)throw new Error("That model isn’t included in this copy of Edit Bay.");const bufs=[];let n=0;for(const p of parts){const r=await fetch(base+p);if(!r.ok)throw new Error("Couldn’t load a built-in model file ("+r.status+").");bufs.push(await r.arrayBuffer());n++;if(onProgress)onProgress(rel,n/parts.length*100)}return new Blob(bufs)};
+  const W=T.env.backends.onnx.wasm;W.wasmBinary=await (await joined("ort/ort-wasm-simd-threaded.jsep.wasm")).arrayBuffer();W.proxy=false;W.numThreads=1;
+  Object.assign(T.env,{allowRemoteModels:true,remoteHost:base,remotePathTemplate:"{model}/",useBrowserCache:false,useCustomCache:true,
+    customCache:{async match(req){const url=typeof req==="string"?req:req&&req.url;const rel=url&&url.startsWith(base)?url.slice(base.length):"";return rel&&man.split[rel]?new Response(await joined(rel)):undefined},async put(){}}});
+  return BUNDLED={base,man,joined}}
 const ASR={
   lib:"https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1",
   model:"onnx-community/whisper-base_timestamped",
   pipe:null,
   /* replaceable in tests; returns fn(Float32Array 16 kHz mono) -> {chunks:[{text,timestamp:[s,e]}]} */
-  async load(onProgress){if(this.pipe)return this.pipe;const T=await import(this.lib);T.env.allowLocalModels=false;try{if(!navigator.gpu)T.env.backends.onnx.wasm.proxy=true}catch(e){}
-    /* WebGPU with half-precision support: fp16 encoder + q4f16 decoder (~110 MB). Otherwise WASM with 8-bit weights (~77 MB). */
-    let f16=false;try{const a=navigator.gpu&&await navigator.gpu.requestAdapter();f16=!!(a&&a.features.has("shader-f16"))}catch(e){}
-    this.device=f16?"webgpu":"wasm";
-    this.pipe=await T.pipeline("automatic-speech-recognition",this.model,{device:this.device,dtype:f16?{encoder_model:"fp16",decoder_model_merged:"q4f16"}:"q8",progress_callback:p=>{if(p&&p.status==="progress"&&onProgress)onProgress(p.file,p.progress)}});return this.pipe}
+  async load(onProgress){if(this.pipe)return this.pipe;const T=await import(this.lib);T.env.allowLocalModels=false;
+    /* claude.ai only lets the page fetch its own files, so there the model comes from the copy published with Edit Bay */
+    if(!HOSTED||this.forceBundled)return this.loadBundled(T,onProgress);
+    try{try{if(!navigator.gpu)T.env.backends.onnx.wasm.proxy=true}catch(e){}
+      /* WebGPU with half-precision support: fp16 encoder + q4f16 decoder (~110 MB). Otherwise WASM with 8-bit weights (~77 MB). */
+      let f16=false;try{const a=navigator.gpu&&await navigator.gpu.requestAdapter();f16=!!(a&&a.features.has("shader-f16"))}catch(e){}
+      this.device=f16?"webgpu":"wasm";
+      this.pipe=await T.pipeline("automatic-speech-recognition",this.model,{device:this.device,dtype:f16?{encoder_model:"fp16",decoder_model_merged:"q4f16"}:"q8",progress_callback:p=>{if(p&&p.status==="progress"&&onProgress)onProgress(p.file,p.progress)}});return this.pipe}
+    catch(e){/* Hugging Face unreachable: use the smaller model that ships with the app */try{T.env.backends.onnx.wasm.proxy=false}catch(x){}return this.loadBundled(T,onProgress)}},
+  /* models/ holds whisper-tiny (8-bit) and the ONNX Runtime binary, split into pieces under 15 MB (claude.ai's file limit) */
+  async loadBundled(T,onProgress){const B=await bundledModels(T,onProgress);this.device="wasm";this.bundled=true;
+    /* the 8-bit encoder breaks word timings, so the encoder ships in half precision */
+    this.pipe=await T.pipeline("automatic-speech-recognition","whisper-tiny",{device:"wasm",dtype:B.man.dtype||{encoder_model:"fp16",decoder_model_merged:"q8"},progress_callback:p=>{if(p&&p.status==="progress"&&onProgress)onProgress(p.file,p.progress)}});return this.pipe}
 };
 async function audio16k(m){let blob=null;if(m.localId&&typeof LBLOB!=="undefined"&&LBLOB.get){try{blob=await LBLOB.get(m.localId)}catch(e){}}
   if(!blob){const u=blobUrl(m);if(!u)throw new Error("The original file isn’t on this device.");blob=await (await fetch(u)).blob()}
@@ -17,13 +34,15 @@ async function audio16k(m){let blob=null;if(m.localId&&typeof LBLOB!=="undefined
   const oc=new OfflineAudioContext(1,Math.ceil(dec.duration*16000),16000);const s=oc.createBufferSource();s.buffer=dec;s.connect(oc.destination);s.start();return(await oc.startRendering()).getChannelData(0)}
 let asrBusy=false,asrCancel=false;
 async function transcribeMedia(m,opts){if(asrBusy){toast("CAPTIONS","Already transcribing. Wait for it to finish.");return null}asrBusy=true;asrCancel=false;opts=opts||{};
-  const ui=sheet("sh-asr",`<h3>Making captions</h3><p id="asrMsg" style="font-size:12.5px;color:var(--muted);margin:0 0 8px">Getting the speech model ready. The first time, this downloads about 80–110 MB; after that it’s instant and works offline.</p><div class="sb"><i id="asrBar" style="width:2%"></i></div><p style="font-size:11.5px;color:var(--dim)">Runs on this device. ${esc(m.name)} is not uploaded.</p><div class="acts"><button class="btn" data-asrcancel="1">Cancel</button></div>`,"Making captions");
+  const ui=sheet("sh-asr",`<h3>Making captions</h3><p id="asrMsg" style="font-size:12.5px;color:var(--muted);margin:0 0 8px">Getting the speech model ready. ${HOSTED?"The first time, this downloads about 80–110 MB; after that it’s quick and works offline.":"It loads from Edit Bay itself (about 60 MB) and runs on this computer."}</p><div class="sb"><i id="asrBar" style="width:2%"></i></div><p style="font-size:11.5px;color:var(--dim)">Runs on this device. ${esc(m.name)} is not uploaded.</p><div class="acts"><button class="btn" data-asrcancel="1">Cancel</button></div>`,"Making captions");
   const msg=t=>{const e=$("#asrMsg");if(e)e.textContent=t},bar=p=>{const e=$("#asrBar");if(e)e.style.width=Math.max(2,Math.min(100,p)).toFixed(0)+"%"};
   try{const files={};const pipe=await ASR.load((f,p)=>{files[f]=p||0;const v=Object.values(files);bar(v.reduce((a,b)=>a+b,0)/Math.max(1,v.length)*.6)});if(asrCancel)throw new Error("cancel");
     msg("Reading the sound from "+m.name+"…");bar(62);const pcm=await audio16k(m);if(asrCancel)throw new Error("cancel");
     msg("Listening… ("+Math.round(pcm.length/16000)+" s of audio. On a laptop this takes roughly a third of that.)");bar(70);
     const out=await pipe(pcm,{return_timestamps:"word",chunk_length_s:30,stride_length_s:5,language:opts.lang||null});if(asrCancel)throw new Error("cancel");
-    const words=(out.chunks||[]).map(c=>({s:+(c.timestamp[0]||0),e:+(c.timestamp[1]==null?(c.timestamp[0]||0)+.3:c.timestamp[1]),t:String(c.text||"").trim()})).filter(w=>w.t&&w.e>=w.s);
+    const words=[];for(const c of (out.chunks||[])){const w={s:+(c.timestamp[0]||0),e:+(c.timestamp[1]==null?(c.timestamp[0]||0)+.3:c.timestamp[1]),t:String(c.text||"").trim()};if(!w.t||w.e<w.s)continue;
+      /* Whisper splits hyphenated words ("half" + "-ten"): join them back */
+      const prev=words[words.length-1];if(prev&&/^-\S/.test(w.t)){prev.t+=w.t;prev.e=w.e}else words.push(w)}
     if(!words.length)throw new Error("No speech found in "+m.name+".");
     const tx={words,by:"whisper"};m.tx=tx;if(db)await db.doc("media/"+m.id).update({tx}).catch(()=>{});
     bar(100);closeSheet("sh-asr");track("transcribe");return tx}
@@ -43,7 +62,7 @@ async function autoCaptions(){if(!getTL()||!E.tl.clips.length){toast("CAPTIONS",
   const ms=[...new Set(E.tl.clips.filter(c=>c.mediaId&&!c.off&&(c.track==="V1"||c.type==="audio")).map(c=>c.mediaId))].map(mediaOf).filter(m=>m&&m.kind!=="image");
   if(!ms.length){toast("CAPTIONS","No video or audio with sound on the storyline or audio tracks.");return}
   for(const m of ms)if(!m.tx){const r=await transcribeMedia(m);if(!r)return}
-  const n=placeCaptions();toast("CAPTIONS",n?`${n} captions placed on V3. Edit any of them in the Inspector, or fix words in Browser › Timeline › Text.`:"No speech landed on the timeline.")}
+  let n=placeCaptions();const fixed=n?await polishCaptions():0;toast("CAPTIONS",n&&fixed?`${n} captions placed on V3; the AI corrected ${fixed} of them (names, spelling, punctuation). Undo (⌘Z) restores the raw text.`:n?`${n} captions placed on V3. Edit any of them in the Inspector, or fix words in Browser › Timeline › Text.`:"No speech landed on the timeline.")}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-autocap]");if(b){e.preventDefault();autoCaptions()}
   const t=e.target.closest("[data-txauto]");if(t){e.preventDefault();const sel=selClips()[0];const m=mediaOf((sel&&sel.mediaId)||(projMedia().find(x=>x.kind!=="image")||{}).id);if(!m){toast("TRANSCRIPT","Import a clip with speech first.");return}
     transcribeMedia(m).then(tx=>{if(tx){toast("TRANSCRIPT",tx.words.length+" words from "+m.name+". Edit by deleting text, or make captions.");state.ixtab="text";state.btab="index";renderBrowser()}})}});
@@ -56,3 +75,40 @@ const _rmbC=renderMediaBrowser;renderMediaBrowser=function(...a){const r=_rmbC.a
 const _rtC=renderText;renderText=function(...a){const r=_rtC.apply(this,a);capButtons();return r};
 if(typeof cmdList==="function"){const _cl=cmdList;cmdList=function(){const L=_cl();if(cur()){L.unshift({g:"Captions",l:"Auto captions from speech",f:autoCaptions});L.push({g:"Captions",l:"Transcribe selected clip",f:()=>{const b=document.createElement("button");b.dataset.txauto=1;b.hidden=true;document.body.appendChild(b);b.click();b.remove()}})}
   L.push({g:"Help",l:"Check this browser",f:sysCheck},{g:"Help",l:"Open sample project",f:makeSample},{g:"Help",l:"Usage counts",f:()=>{const b=document.createElement("button");b.dataset.usagetoggle=1;b.hidden=true;document.body.appendChild(b);b.click();b.remove()}});return L}}
+
+/* AI clean-up: speech models mishear names ("Sam's Zip" for Samszy). The AI corrects spelling, names and punctuation
+   using facts already in the project. It keeps the same lines and never adds anything that wasn't said. */
+async function polishCaptions(){try{if(HOSTED&&typeof aiConf==="function"&&aiConf().p==="local")return 0;const S=await getSample();if(!S||!E.tl)return 0;
+  const caps=E.tl.clips.filter(c=>c.autoCap).sort((a,b)=>a.start-b.start);if(!caps.length)return 0;
+  const facts=[cur()&&cur().title,...E.tl.clips.filter(c=>c.type==="title"&&!c.autoCap).map(c=>c.text),...(E.tl.markers||[]).map(m=>m.text),...projMedia().map(m=>m.name.replace(/\.[a-z0-9]+$/i,""))].filter(Boolean).map(t=>String(t).slice(0,80)).slice(0,40);
+  const prompt=`These video captions were transcribed automatically from speech and contain mistakes. Correct spelling, names and punctuation.
+Rules: keep exactly ${caps.length} lines in the same order; keep each line's meaning and roughly its length; never add words or facts that were not spoken; prefer the spellings of names found in the project facts.
+Project facts: ${JSON.stringify(facts)}
+Captions: ${JSON.stringify(caps.map(c=>c.text))}
+Reply with ONLY JSON: {"lines":["…"]}`;
+  const r=await S.json(prompt,{modelTier:"default"});const L=r&&Array.isArray(r.lines)?r.lines:null;if(!L||L.length!==caps.length)return 0;let n=0;
+  edit(()=>caps.forEach((c,i)=>{const t=String(L[i]||"").trim();if(t&&t!==c.text&&t.length<=c.text.length*1.6+12){c.text=t;n++}}));if(n&&typeof track==="function")track("captions-polished");return n}catch(e){return 0}}
+
+/* ---------- caption styles: one click (or one chat request) restyles every caption; text and timing stay ---------- */
+const CAP_STYLES={
+  karaoke:{label:"Karaoke",set:{font:"Archivo",weight:800,size:4.4,yPos:72,align:"center",upper:false,color:"#ffffff",stroke:true,strokeColor:"#000000",shadow:false,glow:false,box:false,anim:"none",hl:"#f4c430"}},
+  pop:{label:"Bold pop",set:{font:"Anton",weight:400,size:6.2,yPos:66,align:"center",upper:true,color:"#ffffff",stroke:true,strokeColor:"#000000",shadow:true,glow:false,box:false,anim:"pop",hl:"#e8000a"}},
+  lower:{label:"Lower third",set:{font:"Archivo",weight:700,size:3.4,yPos:84,align:"center",upper:false,color:"#ffffff",stroke:false,shadow:false,glow:false,box:true,boxColor:"#000000",boxOp:.65,anim:"none",hl:""}},
+  clean:{label:"Clean",set:{font:"Archivo",weight:500,size:3.8,yPos:78,align:"center",upper:false,color:"#ffffff",stroke:false,shadow:true,glow:false,box:false,anim:"none",hl:""}},
+  neon:{label:"Neon",set:{font:"Bebas Neue",weight:400,size:5.6,yPos:70,align:"center",upper:true,color:"#ffffff",stroke:false,shadow:false,glow:true,box:false,anim:"none",hl:"#ff3b42"}},
+  mono:{label:"Typewriter",set:{font:"Space Mono",weight:700,size:3.2,yPos:80,align:"center",upper:true,color:"#f2ede8",stroke:false,shadow:false,glow:false,box:true,boxColor:"#080808",boxOp:.8,anim:"type",hl:""}}};
+const isCaption=c=>c&&c.type==="title"&&(c.autoCap||c.name==="Caption"||(c.track==="V3"&&/^caption$/i.test(c.name||"")));
+function styleCaptions(key,extra){const st=CAP_STYLES[key];const caps=(E.tl?E.tl.clips:[]).filter(isCaption);if(!caps.length)return 0;
+  const set=Object.assign({},st?st.set:{});["hl","color","size","yPos","upper"].forEach(k=>{if(extra&&extra[k]!=null)set[k]=k==="size"?clamp(+extra[k],1.5,14):k==="yPos"?clamp(+extra[k],4,96):extra[k]});
+  if(!Object.keys(set).length)return 0;edit(()=>caps.forEach(c=>{Object.assign(c,set);if(st)c.capStyle=key}));if(typeof track==="function"&&st)track("caption-style:"+key);return caps.length}
+/* Inspector: style chips whenever a caption is selected */
+const _eciCS=edClipInspector;edClipInspector=function(box){_eciCS(box);const c=selClips()[0];if(!isCaption(c)||box.querySelector("#capstyles"))return;const first=box.querySelector(".grp,.cprop");if(!first)return;
+  const n=E.tl.clips.filter(isCaption).length;first.insertAdjacentHTML("beforebegin",`<div class="grp" id="capstyles"><span>Caption style · all ${n}</span></div><div class="capchips" role="group" aria-label="Caption style for all captions">${Object.entries(CAP_STYLES).map(([k,s])=>`<button type="button" data-capstyle="${k}" aria-pressed="${c.capStyle===k}">${s.label}</button>`).join("")}</div>`)};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-capstyle]");if(!b)return;const n=styleCaptions(b.dataset.capstyle);$("#insp").dataset.k="";renderInsp();toast("CAPTIONS",n?`${CAP_STYLES[b.dataset.capstyle].label} style on all ${n} captions.`:"No captions to style yet.")});
+if(typeof cmdList==="function"){const _clCS=cmdList;cmdList=function(){const L=_clCS();if(cur()&&E.tl&&E.tl.clips.some(isCaption))Object.entries(CAP_STYLES).forEach(([k,s])=>L.push({g:"Captions",l:"Caption style: "+s.label,f:()=>{const n=styleCaptions(k);toast("CAPTIONS",`${s.label} style on all ${n} captions.`)}}));return L}}
+/* chat: {"op":"captions","style":"pop","hl":"#e8000a"} */
+const _aoCS=applyOps;applyOps=function(ops,alias){const rest=[],done=[],skipped=[];(ops||[]).forEach(o=>{if(!o||o.op!=="captions"){rest.push(o);return}
+    if(o.style&&!CAP_STYLES[o.style]){skipped.push("captions");return}const caps=E.tl.clips.filter(isCaption);if(!caps.length){skipped.push("captions");return}
+    const set=Object.assign({},o.style?CAP_STYLES[o.style].set:{});["hl","color","size","yPos","upper"].forEach(k=>{if(o[k]!=null)set[k]=k==="size"?clamp(+o[k],1.5,14):k==="yPos"?clamp(+o[k],4,96):o[k]});
+    caps.forEach(c=>{Object.assign(c,set);if(o.style)c.capStyle=o.style});done.push("captions")});
+  const r=_aoCS(rest,alias);return{done:done.concat(r.done),skipped:skipped.concat(r.skipped)}};

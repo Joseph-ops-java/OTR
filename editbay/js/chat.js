@@ -2,7 +2,7 @@
    a saved version before every AI edit with Undo / Try again on each reply, context-aware quick commands, and a Scenes view. */
 E.chat={};E.chatLoaded={};
 const turnsOf=pid=>E.chat[pid]=E.chat[pid]||[];
-async function loadChat(pid){if(E.chatLoaded[pid]||!db)return;E.chatLoaded[pid]=true;try{const d=await db.doc("chats/"+pid).get();if(d.exists){const t=(d.data()||{}).turns;if(Array.isArray(t))E.chat[pid]=t}}catch(e){}refreshAssist()}
+async function loadChat(pid){if(E.chatLoaded[pid]||!db)return;E.chatLoaded[pid]=true;try{const d=await db.doc("chats/"+pid).get();if(d.exists){const t=(d.data()||{}).turns;/* copy it: the database hands back read-only data, and the chat appends to this list */if(Array.isArray(t))E.chat[pid]=JSON.parse(JSON.stringify(t))}}catch(e){}refreshAssist()}
 function saveChat(pid){if(!db)return;const t=turnsOf(pid).slice(-40);db.doc("chats/"+pid).set({turns:t}).catch(()=>{})}
 async function aiCheckpoint(name){if(!E.tl||!db)return null;const id=uid("v");try{await db.collection("versions").doc(id).set({projectId:E.pid,name:String(name).slice(0,80),at:nowSec(),by:"claude",auto:true,dur:+tlDur().toFixed(2),clips:E.tl.clips.length,tl:clone(E.tl)});return id}catch(e){return null}}
 function quickCmds(){const empty=!E.tl||!E.tl.clips.length;return empty?[["Create a video from my clips","create"],["Cut my clips to the music",""],["Make a 15 s teaser",""]]:
@@ -26,16 +26,17 @@ async function runAssist(review,again){if(assistBusy||!E.tl)return;const txtEl=$
   const actId=uid("act"),act={projectId:pid,title:review?"Reviewing the cut":"Editing: "+ask.slice(0,60),step:E.chatStage,status:"working",progress:null,startedAt:nowISO(),updatedAt:nowSec(),chat:"Claude in Edit Bay"};if(db)db.collection("activity").doc(actId).set(act).catch(()=>{});
   try{let images=[],frameNote="";if(review&&sampleCaps&&sampleCaps.images){const fr=await grabFrames(8);images=fr.map(f=>f.blob);frameNote="\nThe attached images are frames from the cut, in order, at these timeline seconds: "+fr.map(f=>f.t.toFixed(2)).join(", ")+"."}
     const hist=T.filter(t=>t.who!=="err").slice(-9,-1).map(t=>(t.who==="me"?"Person: ":"You: ")+t.text+(t.changes?" ["+t.changes+"]":"")).join("\n");
-    const task=review?`Review this cut like a picky film editor. Leave 3–8 "marker" ops at the exact seconds that need work, each with a short, specific note. Don't change clips unless asked.${ask?"\nFocus: "+ask:""}`:`Request: ${ask}`;
+    const task=review?`Review this cut like a picky film editor. Leave 3–8 "marker" ops at the exact seconds that need work, each with a short, specific note. Don't change clips unless asked. Review the sound too: use "audio" (levels, silences, and "issues") and leave a marker at each sound problem.${ask?"\nFocus: "+ask:""}`:`Request: ${ask}`;
     E.chatStage="Thinking about the edit…";refreshAssist();
     const prompt=`${ASSIST_RULES}\n\nTIMELINE (JSON):\n${JSON.stringify(tlSummary())}${frameNote}${hist?"\n\nCONVERSATION SO FAR (most recent last):\n"+hist:""}\n\n${task}`;
-    const r=await S.json(prompt,images.length?{images,modelTier:"default"}:{modelTier:"default"});const ops=Array.isArray(r&&r.ops)?r.ops:[];let res={done:[],skipped:[]},ver=null;
-    if(ops.length){E.chatStage="Applying changes…";refreshAssist();ver=await aiCheckpoint("Before Claude: "+(review?"review":ask));const before=new Map(E.tl.clips.map(c=>[c.id,JSON.stringify(c)]));pushUndo();E.by="claude";res=applyOps(ops,{});E.tl.note=String(r.say||"").slice(0,200);normalize();commit();E.by="joe";
+    /* cache:false so "Try again" and repeated requests really ask again instead of replaying the last answer */
+    const r=await S.json(prompt,images.length?{images,modelTier:"default",cache:false}:{modelTier:"default",cache:false});const ops=Array.isArray(r&&r.ops)?r.ops:[];let res={done:[],skipped:[]},ver=null;
+    if(ops.length){E.chatStage="Applying changes…";refreshAssist();ver=await aiCheckpoint("Before Claude: "+(review?"review":ask)).catch(()=>null);const before=new Map(E.tl.clips.map(c=>[c.id,JSON.stringify(c)]));pushUndo();E.by="claude";res=applyOps(ops,{});E.tl.note=String(r.say||"").slice(0,200);normalize();commit();E.by="joe";
       E.flash=new Set(E.tl.clips.filter(c=>before.get(c.id)!==JSON.stringify(c)).map(c=>c.id));setTimeout(()=>E.flash.clear(),2600);edRefresh();addLog(pid,{who:"claude",text:"Claude: "+(r.say||ops.length+" changes")})}
     const sum=res.done.reduce((m,k)=>(m[k]=(m[k]||0)+1,m),{});const changes=Object.entries(sum).map(([k,v])=>v+"× "+k).join(" · ")+(res.skipped.length?(res.done.length?" · ":"")+res.skipped.length+" skipped":"");
     T.push({who:"claude",text:String((r&&r.say)||(ops.length?"Done.":"No changes needed.")),changes,ver,prompt:review?null:ask,at:nowSec(),changed:[...(E.flash||[])].slice(0,60)});
     if(db)db.collection("activity").doc(actId).set(Object.assign(act,{status:"done",step:String((r&&r.say)||"Done").slice(0,120),progress:1,updatedAt:nowSec()})).catch(()=>{})}
-  catch(e){const c=e&&e.code;T.push({who:"err",text:HOSTED&&!c&&e&&e.message?e.message:c==="not_granted"?"Claude wasn’t allowed. Allow it from this page’s Permissions menu.":c==="rate_limited"?"You’ve hit a usage limit. Try again in a little while.":c==="invalid_json"?"Claude’s answer couldn’t be turned into edits. Try saying it more specifically.":"Claude couldn’t finish that ("+(c||"error")+"). Try again."});
+  catch(e){const c=e&&e.code;try{console.error("Edit Bay chat error",c,e&&e.message,e)}catch(x){}T.push({who:"err",text:HOSTED&&!c&&e&&e.message?e.message:chatErrorText(c,e)});
     if(db)db.collection("activity").doc(actId).set(Object.assign(act,{status:"error",updatedAt:nowSec()})).catch(()=>{})}
   finally{assistBusy=false;E.chatStage="";saveChat(pid);refreshAssist()}}
 document.addEventListener("submit",e=>{if(e.target.id==="assistForm"){e.preventDefault();e.stopImmediatePropagation();runAssist(false)}},true);
@@ -66,3 +67,10 @@ document.addEventListener("change",e=>{const el=e.target;
   else if(el.dataset&&el.dataset.sswap){const c=clipById(el.dataset.sswap),m=mediaOf(el.value);if(c&&m){edit(()=>{const d=cdur(c);c.mediaId=m.id;c.name=m.name;c.type=m.kind;c.speed=1;delete c.ramp;delete c.reverse;delete c.freeze;
     if(m.kind==="image"){c.in=0;c.out=d;c.kb=true}else{const an=AU.vid[m.id];let s=0;if(an&&!an.still){let best=-1;for(let t=0;t+d<=an.dur;t+=Math.max(.25,an.step)){const sc=windowScore(an,t,d);if(sc>best){best=sc;s=t}}}c.in=s;c.out=Math.min((m.dur||d),s+d)}});toast("SWAPPED","Scene now uses "+m.name+".")}}});
 document.addEventListener("click",e=>{const t=e.target.closest(".toast");if(t)t.remove()});
+
+/* say what actually went wrong, and what to do about it */
+function chatErrorText(c,e){const M={not_granted:"Claude wasn’t allowed to run here. Open this page’s Permissions menu, allow Claude, then try again.",rate_limited:"You’ve hit a Claude usage limit, or too many requests are running. Wait a little, then try again.",
+  invalid_json:"Claude answered, but not in a form Edit Bay could turn into edits. Try again, or say it more specifically.",session_expired:"Your claude.ai sign-in has expired. Reload the page and sign in again.",
+  sampling_disabled:"Claude isn’t available for this account or organization in artifacts.",not_declared:"This copy of Edit Bay isn’t set up to use Claude. Reload the page.",capability_disabled:"Claude can’t be used in this view. Open Edit Bay in a normal browser tab on claude.ai.",capability_removed:"This app version can’t run Claude requests from a page. Update the Claude app, or use a browser tab.",
+  refused:"Claude declined this request. Rephrase it and try again.",empty_completion:"Claude returned nothing. Try a simpler request.",prompt_too_large:"This edit is too large to send in one go. Select fewer clips or shorten the timeline, then try again.",images_unavailable:"Claude can’t receive images in this view, so Review can’t watch the cut here.",image_rejected:"Claude couldn’t read the preview frames. Try again.",upstream_error:"Claude’s service had a hiccup. Try again in a moment.",cancelled:"Stopped."};
+  if(c&&M[c])return M[c];const detail=String((e&&e.message)||e||"").slice(0,140);return"Something went wrong"+(c?" ("+c+")":"")+(detail?": "+detail:"")+". Try again, and if it keeps happening send this message through Feedback."}
