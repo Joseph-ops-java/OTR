@@ -55,3 +55,6 @@ These need real downloads or real keys, so they're checked by hand:
 | `t37` | Captions on claude.ai: the built-in speech model under a policy that blocks other hosts, and the AI clean-up (mocked) |
 | `t40` | Score & sound: generated music and sound design on A2/A3, and export |
 | `t41` | The chat changes the music and restyles captions; all ten moods render; caption style chips |
+| `t42` | Voiceover from the built-in voice model (and heard back by the speech model), the sound description the AI reads, ducking by speech, find and replace in captions, Score window controls, Finish my video |
+
+Run `editbay/models/fetch-voice.sh` once before `t42`: the voice model (88 MB) is downloaded, not kept in git.

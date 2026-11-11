@@ -29,6 +29,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Make test media
         run: editbay/tests/make-fixtures.sh
+      - name: Fetch the voice model
+        run: editbay/models/fetch-voice.sh
       - name: Run browser tests
         run: node editbay/tests/run.js
       - name: Keep screenshots and exports

@@ -1,5 +1,14 @@
 /* Edit Bay — captions made in the browser. Whisper (via Transformers.js) turns a clip's speech into a word-level
    transcript on this device; nothing is uploaded. The transcript then drives text editing, filler removal and captions. */
+/* models/ holds the speech and voice models and the ONNX Runtime binary, split into pieces under 15 MB (claude.ai's file
+   limit). This points Transformers.js at them and joins the pieces as they are asked for. */
+let BUNDLED=null;
+async function bundledModels(T,onProgress){if(BUNDLED)return BUNDLED;const base=new URL("models/",location.href).href;const man=await (await fetch(base+"manifest.json")).json();
+  const joined=async rel=>{const parts=man.split[rel];if(!parts)throw new Error("That model isn’t included in this copy of Edit Bay.");const bufs=[];let n=0;for(const p of parts){const r=await fetch(base+p);if(!r.ok)throw new Error("Couldn’t load a built-in model file ("+r.status+").");bufs.push(await r.arrayBuffer());n++;if(onProgress)onProgress(rel,n/parts.length*100)}return new Blob(bufs)};
+  const W=T.env.backends.onnx.wasm;W.wasmBinary=await (await joined("ort/ort-wasm-simd-threaded.jsep.wasm")).arrayBuffer();W.proxy=false;W.numThreads=1;
+  Object.assign(T.env,{allowRemoteModels:true,remoteHost:base,remotePathTemplate:"{model}/",useBrowserCache:false,useCustomCache:true,
+    customCache:{async match(req){const url=typeof req==="string"?req:req&&req.url;const rel=url&&url.startsWith(base)?url.slice(base.length):"";return rel&&man.split[rel]?new Response(await joined(rel)):undefined},async put(){}}});
+  return BUNDLED={base,man,joined}}
 const ASR={
   lib:"https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1",
   model:"onnx-community/whisper-base_timestamped",
@@ -15,14 +24,9 @@ const ASR={
       this.pipe=await T.pipeline("automatic-speech-recognition",this.model,{device:this.device,dtype:f16?{encoder_model:"fp16",decoder_model_merged:"q4f16"}:"q8",progress_callback:p=>{if(p&&p.status==="progress"&&onProgress)onProgress(p.file,p.progress)}});return this.pipe}
     catch(e){/* Hugging Face unreachable: use the smaller model that ships with the app */try{T.env.backends.onnx.wasm.proxy=false}catch(x){}return this.loadBundled(T,onProgress)}},
   /* models/ holds whisper-tiny (8-bit) and the ONNX Runtime binary, split into pieces under 15 MB (claude.ai's file limit) */
-  async loadBundled(T,onProgress){const base=new URL("models/",location.href).href;const man=await (await fetch(base+"manifest.json")).json();
-    const joined=async rel=>{const parts=man.split[rel];const bufs=[];let n=0;for(const p of parts){const r=await fetch(base+p);if(!r.ok)throw new Error("Couldn’t load the built-in speech model ("+r.status+").");bufs.push(await r.arrayBuffer());n++;if(onProgress)onProgress(rel,n/parts.length*100)}return new Blob(bufs)};
-    const W=T.env.backends.onnx.wasm;W.wasmBinary=await (await joined("ort/ort-wasm-simd-threaded.jsep.wasm")).arrayBuffer();W.proxy=false;W.numThreads=1;
-    Object.assign(T.env,{allowRemoteModels:true,remoteHost:base,remotePathTemplate:"{model}/",useBrowserCache:false,useCustomCache:true,
-      customCache:{async match(req){const url=typeof req==="string"?req:req&&req.url;const rel=url&&url.startsWith(base)?url.slice(base.length):"";return rel&&man.split[rel]?new Response(await joined(rel)):undefined},async put(){}}});
-    this.device="wasm";this.bundled=true;
+  async loadBundled(T,onProgress){const B=await bundledModels(T,onProgress);this.device="wasm";this.bundled=true;
     /* the 8-bit encoder breaks word timings, so the encoder ships in half precision */
-    this.pipe=await T.pipeline("automatic-speech-recognition","whisper-tiny",{device:"wasm",dtype:man.dtype||{encoder_model:"fp16",decoder_model_merged:"q8"},progress_callback:p=>{if(p&&p.status==="progress"&&onProgress)onProgress(p.file,p.progress)}});return this.pipe}
+    this.pipe=await T.pipeline("automatic-speech-recognition","whisper-tiny",{device:"wasm",dtype:B.man.dtype||{encoder_model:"fp16",decoder_model_merged:"q8"},progress_callback:p=>{if(p&&p.status==="progress"&&onProgress)onProgress(p.file,p.progress)}});return this.pipe}
 };
 async function audio16k(m){let blob=null;if(m.localId&&typeof LBLOB!=="undefined"&&LBLOB.get){try{blob=await LBLOB.get(m.localId)}catch(e){}}
   if(!blob){const u=blobUrl(m);if(!u)throw new Error("The original file isn’t on this device.");blob=await (await fetch(u)).blob()}

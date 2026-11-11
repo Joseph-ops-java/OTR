@@ -119,7 +119,8 @@ function dropGenerated(gen){const old=E.tl.clips.filter(c=>c.gen===gen);if(!old.
   mids.forEach(id=>{if(E.tl.clips.some(c=>c.mediaId===id))return;const k=state.media.findIndex(m=>m.id===id);if(k>=0){const m=state.media[k];state.media.splice(k,1);if(db)db.doc("media/"+id).delete().catch(()=>{});if(m.localId&&typeof LBLOB!=="undefined"&&LBLOB.del)LBLOB.del(m.localId).catch(()=>{})}})}
 async function placeGenerated(buf,name,pref,vol,gen){const D=scoreFacts().D;const f=new File([wavBlob(buf)],name,{type:"audio/wav"});await importFiles([f]);const m=[...state.media].reverse().find(x=>x.name===name&&x.projectId===cur().id);if(!m)throw new Error("import");
   let tr=freeAudioTrack(pref,D);if(!tr&&typeof addTrack==="function"){addTrack("a");tr=freeAudioTrack(pref,D)}if(!tr)tr=pref;
-  placeMedia(m.id,tr,0);const c=[...E.tl.clips].reverse().find(x=>x.mediaId===m.id);if(c)edit(()=>{c.track=tr;c.start=0;c.vol=vol;c.out=Math.min(c.out,D);c.by="claude";c.name=name;c.gen=gen});return tr}
+  /* placed in one edit, straight onto its track: placing first and moving after lets overlapping clips get pushed along */
+  edit(tl=>{const c=newClip(m,tr,0);Object.assign(c,{track:tr,start:0,vol,out:Math.min(c.out,D),by:"claude",name,gen});tl.clips.push(c);relink(c)});return tr}
 
 async function makeScore(o){if(!getTL()||!E.tl.clips.length){toast("SCORE","Put some clips on the timeline first, so the music has an edit to follow.");return}
   const msg=t=>{const e=$("#scoreMsg");if(e)e.textContent=t};const go=$("#scoreGo");if(go)go.disabled=true;

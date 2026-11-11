@@ -118,6 +118,9 @@ Deploy the Cloudflare Worker in `server/` (see `server/README.md`) and set `clau
 | `js/beta2.js` | Sample project, footage error messages, match timeline to first clip, keyframe easing, storage warnings, opt-in usage counts, browser check, tablet drawer |
 | `js/captions.js` | Captions and transcripts made in the browser (Whisper via Transformers.js), plus an AI clean-up of names and punctuation |
 | `js/score.js` | Score & sound: original background music planned from the edit (by the AI or Edit Bay) and synthesised in the browser, plus sound effects on transitions and titles |
+| `js/voice.js` | Voiceover from text: Kokoro (Apache-2.0) speaks a script onto the timeline; the AI can write the script from facts on screen |
+| `js/studio.js` | A description of the sound for the AI (levels, speech spans, silences, beats, problems), ducking by real speech, Finish my video, Score window controls, find and replace in captions |
+| `models/fetch-voice.sh` | Downloads and splits the voice model for claude.ai (not kept in git) |
 | `models/` | The built-in speech model (Whisper tiny, half-precision encoder and 8-bit decoder) and ONNX Runtime binary, split into pieces under 15 MB so claude.ai can serve them |
 | `manifest.webmanifest`, `sw.js`, `icons/` | Installable web app and offline support |
 | `privacy.html`, `terms.html` | Privacy and terms pages |
