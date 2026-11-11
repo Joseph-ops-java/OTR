@@ -14,7 +14,8 @@ async function analyzeAudio(m){if(AUD[m.id])return AUD[m.id];const ab=await deco
 const r2=v=>+(+v).toFixed(2);
 function clipGainDb(c){const g=(c.vol==null?1:c.vol)*busGain(c.track);return g>0?20*Math.log10(g):-90}
 async function audioMap(){const tl=E.tl;if(!tl)return null;const clips=tl.clips.filter(c=>c.mediaId&&!c.off&&(c.type==="video"||c.type==="audio")&&!c.freeze&&clipGainDb(c)>-60);const out=[],musicBeats=[];
-  const media=[...new Set(clips.map(c=>c.mediaId))].map(mediaOf).filter(m=>m&&m.kind!=="image"&&(m.dur||0)<=900).slice(0,12);
+  /* skip very large files: decoding them just to describe the sound could run the browser out of memory */
+  const media=[...new Set(clips.map(c=>c.mediaId))].map(mediaOf).filter(m=>m&&m.kind!=="image"&&(m.dur||0)<=900&&(m.size||0)<=250*1048576).slice(0,12);
   await Promise.all(media.map(m=>analyzeAudio(m).catch(()=>null)));
   for(const c of clips){const a=AUD[c.mediaId];if(!a)continue;const sp=c.speed||1,lo=Math.min(c.in,c.out),hi=Math.max(c.in,c.out);const simple=!c.reverse&&!c.ramp;
     const sound=simple?a.sound.filter(s=>s[1]>lo&&s[0]<hi).map(s=>[r2(c.start+(Math.max(s[0],lo)-c.in)/sp),r2(c.start+(Math.min(s[1],hi)-c.in)/sp)]):[[r2(c.start),r2(cend(c))]];
