@@ -2,7 +2,7 @@
    a saved version before every AI edit with Undo / Try again on each reply, context-aware quick commands, and a Scenes view. */
 E.chat={};E.chatLoaded={};
 const turnsOf=pid=>E.chat[pid]=E.chat[pid]||[];
-async function loadChat(pid){if(E.chatLoaded[pid]||!db)return;E.chatLoaded[pid]=true;try{const d=await db.doc("chats/"+pid).get();if(d.exists){const t=(d.data()||{}).turns;if(Array.isArray(t))E.chat[pid]=t}}catch(e){}refreshAssist()}
+async function loadChat(pid){if(E.chatLoaded[pid]||!db)return;E.chatLoaded[pid]=true;try{const d=await db.doc("chats/"+pid).get();if(d.exists){const t=(d.data()||{}).turns;/* copy it: the database hands back read-only data, and the chat appends to this list */if(Array.isArray(t))E.chat[pid]=JSON.parse(JSON.stringify(t))}}catch(e){}refreshAssist()}
 function saveChat(pid){if(!db)return;const t=turnsOf(pid).slice(-40);db.doc("chats/"+pid).set({turns:t}).catch(()=>{})}
 async function aiCheckpoint(name){if(!E.tl||!db)return null;const id=uid("v");try{await db.collection("versions").doc(id).set({projectId:E.pid,name:String(name).slice(0,80),at:nowSec(),by:"claude",auto:true,dur:+tlDur().toFixed(2),clips:E.tl.clips.length,tl:clone(E.tl)});return id}catch(e){return null}}
 function quickCmds(){const empty=!E.tl||!E.tl.clips.length;return empty?[["Create a video from my clips","create"],["Cut my clips to the music",""],["Make a 15 s teaser",""]]:

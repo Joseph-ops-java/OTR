@@ -58,3 +58,4 @@ These need real downloads or real keys, so they're checked by hand:
 | `t42` | Voiceover from the built-in voice model (and heard back by the speech model), the sound description the AI reads, ducking by speech, find and replace in captions, Score window controls, Finish my video |
 
 Run `editbay/models/fetch-voice.sh` once before `t42`: the voice model (88 MB) is downloaded, not kept in git.
+| `t43` | Regression: the chat keeps working after a reload, with its history returned read-only by the database |
