@@ -176,6 +176,8 @@ Reply with ONLY JSON: {"say":"one or two plain sentences on what you changed and
 {"op":"timeline","set":{"bars":2.39|2|1.85|0,"bg":"#000000"}}
 {"op":"track","track":"A2","set":{"gain":0.5,"mute":false,"solo":false}}
 {"op":"cut_range","from":s,"to":s} — ripple-delete that stretch of the storyline (use the transcript's timeline times to cut by what people say).
+{"op":"score","mood":"club|hype|house|trap|rnb|lofi|cinematic|anthem|chill|emotional","bpm":60-150,"key":"A","scale":"minor|major","chords":[4 scale degrees 0-6],"melody":[8 scale degrees 0-9 or null],"drop":s,"mute":["drums"|"bass"|"pad"|"arp"|"lead"],"bright":0..1,"new_melody":true,"sfx":true} — generates or changes the background music (Edit Bay synthesises it on A2). Give only the fields to change; the rest is kept from "score" in the timeline. "drop" is where the music lands: put it on the reveal. "bright" 0 is dark and muffled, 1 is bright. {"op":"score","remove":true} deletes it.
+{"op":"captions","style":"karaoke|pop|lower|clean|neon|mono","hl":"#colour","color":"#colour","size":% of height,"yPos":0-100,"upper":bool} — restyles every caption at once (text and timing are kept).
 Only reference ids and media ids that exist. Keep changes focused on the request.`;
 async function getSample(){if(sampleNS)return sampleNS;try{sampleNS=window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(e){sampleNS=null}
   if(sampleNS)sampleCaps=await sampleNS.limits().catch(()=>null);return sampleNS}

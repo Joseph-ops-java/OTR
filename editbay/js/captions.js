@@ -84,3 +84,27 @@ Captions: ${JSON.stringify(caps.map(c=>c.text))}
 Reply with ONLY JSON: {"lines":["…"]}`;
   const r=await S.json(prompt,{modelTier:"default"});const L=r&&Array.isArray(r.lines)?r.lines:null;if(!L||L.length!==caps.length)return 0;let n=0;
   edit(()=>caps.forEach((c,i)=>{const t=String(L[i]||"").trim();if(t&&t!==c.text&&t.length<=c.text.length*1.6+12){c.text=t;n++}}));if(n&&typeof track==="function")track("captions-polished");return n}catch(e){return 0}}
+
+/* ---------- caption styles: one click (or one chat request) restyles every caption; text and timing stay ---------- */
+const CAP_STYLES={
+  karaoke:{label:"Karaoke",set:{font:"Archivo",weight:800,size:4.4,yPos:72,align:"center",upper:false,color:"#ffffff",stroke:true,strokeColor:"#000000",shadow:false,glow:false,box:false,anim:"none",hl:"#f4c430"}},
+  pop:{label:"Bold pop",set:{font:"Anton",weight:400,size:6.2,yPos:66,align:"center",upper:true,color:"#ffffff",stroke:true,strokeColor:"#000000",shadow:true,glow:false,box:false,anim:"pop",hl:"#e8000a"}},
+  lower:{label:"Lower third",set:{font:"Archivo",weight:700,size:3.4,yPos:84,align:"center",upper:false,color:"#ffffff",stroke:false,shadow:false,glow:false,box:true,boxColor:"#000000",boxOp:.65,anim:"none",hl:""}},
+  clean:{label:"Clean",set:{font:"Archivo",weight:500,size:3.8,yPos:78,align:"center",upper:false,color:"#ffffff",stroke:false,shadow:true,glow:false,box:false,anim:"none",hl:""}},
+  neon:{label:"Neon",set:{font:"Bebas Neue",weight:400,size:5.6,yPos:70,align:"center",upper:true,color:"#ffffff",stroke:false,shadow:false,glow:true,box:false,anim:"none",hl:"#ff3b42"}},
+  mono:{label:"Typewriter",set:{font:"Space Mono",weight:700,size:3.2,yPos:80,align:"center",upper:true,color:"#f2ede8",stroke:false,shadow:false,glow:false,box:true,boxColor:"#080808",boxOp:.8,anim:"type",hl:""}}};
+const isCaption=c=>c&&c.type==="title"&&(c.autoCap||c.name==="Caption"||(c.track==="V3"&&/^caption$/i.test(c.name||"")));
+function styleCaptions(key,extra){const st=CAP_STYLES[key];const caps=(E.tl?E.tl.clips:[]).filter(isCaption);if(!caps.length)return 0;
+  const set=Object.assign({},st?st.set:{});["hl","color","size","yPos","upper"].forEach(k=>{if(extra&&extra[k]!=null)set[k]=k==="size"?clamp(+extra[k],1.5,14):k==="yPos"?clamp(+extra[k],4,96):extra[k]});
+  if(!Object.keys(set).length)return 0;edit(()=>caps.forEach(c=>{Object.assign(c,set);if(st)c.capStyle=key}));if(typeof track==="function"&&st)track("caption-style:"+key);return caps.length}
+/* Inspector: style chips whenever a caption is selected */
+const _eciCS=edClipInspector;edClipInspector=function(box){_eciCS(box);const c=selClips()[0];if(!isCaption(c)||box.querySelector("#capstyles"))return;const first=box.querySelector(".grp,.cprop");if(!first)return;
+  const n=E.tl.clips.filter(isCaption).length;first.insertAdjacentHTML("beforebegin",`<div class="grp" id="capstyles"><span>Caption style · all ${n}</span></div><div class="capchips" role="group" aria-label="Caption style for all captions">${Object.entries(CAP_STYLES).map(([k,s])=>`<button type="button" data-capstyle="${k}" aria-pressed="${c.capStyle===k}">${s.label}</button>`).join("")}</div>`)};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-capstyle]");if(!b)return;const n=styleCaptions(b.dataset.capstyle);$("#insp").dataset.k="";renderInsp();toast("CAPTIONS",n?`${CAP_STYLES[b.dataset.capstyle].label} style on all ${n} captions.`:"No captions to style yet.")});
+if(typeof cmdList==="function"){const _clCS=cmdList;cmdList=function(){const L=_clCS();if(cur()&&E.tl&&E.tl.clips.some(isCaption))Object.entries(CAP_STYLES).forEach(([k,s])=>L.push({g:"Captions",l:"Caption style: "+s.label,f:()=>{const n=styleCaptions(k);toast("CAPTIONS",`${s.label} style on all ${n} captions.`)}}));return L}}
+/* chat: {"op":"captions","style":"pop","hl":"#e8000a"} */
+const _aoCS=applyOps;applyOps=function(ops,alias){const rest=[],done=[],skipped=[];(ops||[]).forEach(o=>{if(!o||o.op!=="captions"){rest.push(o);return}
+    if(o.style&&!CAP_STYLES[o.style]){skipped.push("captions");return}const caps=E.tl.clips.filter(isCaption);if(!caps.length){skipped.push("captions");return}
+    const set=Object.assign({},o.style?CAP_STYLES[o.style].set:{});["hl","color","size","yPos","upper"].forEach(k=>{if(o[k]!=null)set[k]=k==="size"?clamp(+o[k],1.5,14):k==="yPos"?clamp(+o[k],4,96):o[k]});
+    caps.forEach(c=>{Object.assign(c,set);if(o.style)c.capStyle=o.style});done.push("captions")});
+  const r=_aoCS(rest,alias);return{done:done.concat(r.done),skipped:skipped.concat(r.skipped)}};

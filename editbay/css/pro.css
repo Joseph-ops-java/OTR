@@ -499,3 +499,6 @@ body.picking #pgm{cursor:crosshair}
 .tlnone,.etl-empty span{color:#a2a2aa}
 #installBtn{min-width:44px;min-height:30px}
 .pages .hint{color:#8f8f97}
+.capchips{display:flex;flex-wrap:wrap;gap:5px;padding:4px 12px 10px}
+.capchips button{background:#2a2a2e;border:1px solid var(--line);border-radius:14px;padding:4px 10px;font-size:11.5px;color:#d9d9de}
+.capchips button:hover{background:#34343a}.capchips button[aria-pressed="true"]{background:#3a6fd8;border-color:#3a6fd8;color:#fff}
