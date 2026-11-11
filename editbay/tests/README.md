@@ -49,3 +49,8 @@ These need real downloads or real keys, so they're checked by hand:
 - **Captions:** in-browser Whisper.
 - **AI services:** live Gemini, OpenRouter, Groq and Claude.
 - **Other browsers:** Safari and Firefox.
+
+| Suite | Covers |
+|---|---|
+| `t37` | Captions on claude.ai: the built-in speech model under a policy that blocks other hosts, and the AI clean-up (mocked) |
+| `t40` | Score & sound: generated music and sound design on A2/A3, and export |

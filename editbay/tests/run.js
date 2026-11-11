@@ -11,7 +11,7 @@ const EXPECT={
   "t13":[/gain wheel/,/film look/],"t14":[/built \{/],"t15":[/layout/],"t16":[/scenes \d/],"t17":[/unlabelled icon buttons 0/],"t20":[/backup \d/],
   "t22":[/tile applied iris/,/"done":\["effect","frame","transition"\]/],"t24":[/tracks V4,V3,V2,V1,A1,A2,A3,A4/,/pack t1/],"t25":[/ruler 0:00 0:01 0:02 0:03/,/cmdk glow/],
   "t27":[/proxy got prompt true/,/markers \["from proxy"\]/],"t29":[/sample export done/,/hevc .*HEVC/],"t31":[/bad key Claude rejected/,/applied \["hook"\]/],
-  "t34":[/markers \["gemini","openrouter"\]/],"t36":[/policy true/,/blocked true/,/allowed true/,/export under policy done/],"t35":[/Added dissolve transitions to 2 cuts/,/Muted/]};
+  "t34":[/markers \["gemini","openrouter"\]/],"t37":[/on claude.ai true/,/model built in true/,/first words Welcome@0\.0/,/captions [1-9]\d* \| cleaned by AI true/,/blocked 0/],"t40":[/score button 1/,/"A2","Score - Dark club 124 BPM \(generated\)\.wav"/,/"A3","Sound design \(generated\)\.wav"/,/export done/],"t36":[/policy true/,/blocked true/,/allowed true/,/export under policy done/],"t35":[/Added dissolve transitions to 2 cuts/,/Muted/]};
 const server=http.createServer((req,res)=>{let p=decodeURIComponent(req.url.split("?")[0]);if(p.endsWith("/"))p+="index.html";const f=path.join(ROOT,p);
   if(!f.startsWith(ROOT)||!fs.existsSync(f)||fs.statSync(f).isDirectory()){res.writeHead(404);return res.end()}
   res.writeHead(200,{"content-type":TYPES[path.extname(f)]||"application/octet-stream"});fs.createReadStream(f).pipe(res)});

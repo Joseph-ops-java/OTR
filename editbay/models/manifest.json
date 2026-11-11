@@ -1,0 +1,24 @@
+{
+ "model": "whisper-tiny",
+ "source": "onnx-community/whisper-tiny_timestamped (OpenAI Whisper, Apache-2.0/MIT)",
+ "ort": "onnxruntime-web 1.22.0-dev.20250409-89f8206ba4 (MIT)",
+ "split": {
+  "whisper-tiny/onnx/decoder_model_merged_quantized.onnx": [
+   "whisper-tiny/onnx/decoder_model_merged_quantized.onnx.part0",
+   "whisper-tiny/onnx/decoder_model_merged_quantized.onnx.part1",
+   "whisper-tiny/onnx/decoder_model_merged_quantized.onnx.part2"
+  ],
+  "whisper-tiny/onnx/encoder_model_fp16.onnx": [
+   "whisper-tiny/onnx/encoder_model_fp16.onnx.part0",
+   "whisper-tiny/onnx/encoder_model_fp16.onnx.part1"
+  ],
+  "ort/ort-wasm-simd-threaded.jsep.wasm": [
+   "ort/ort-wasm-simd-threaded.jsep.wasm.part0",
+   "ort/ort-wasm-simd-threaded.jsep.wasm.part1"
+  ]
+ },
+ "dtype": {
+  "encoder_model": "fp16",
+  "decoder_model_merged": "q8"
+ }
+}
